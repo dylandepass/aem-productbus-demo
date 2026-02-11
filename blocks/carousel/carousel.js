@@ -1,7 +1,8 @@
-const AUTOPLAY_INTERVAL = 5000;
+const AUTOPLAY_INTERVAL = 3000;
+const TRANSITION_MS = 600;
 
 /**
- * Auto-rotating image carousel block.
+ * Auto-rotating image carousel block with slide animation.
  * @param {HTMLElement} block - The carousel block element
  */
 export default function decorate(block) {
@@ -9,15 +10,13 @@ export default function decorate(block) {
   if (rows.length === 0) return;
 
   // Build slides
-  const slidesContainer = document.createElement('div');
-  slidesContainer.className = 'carousel-slides';
+  const track = document.createElement('div');
+  track.className = 'carousel-track';
 
   const slides = rows.map((row, i) => {
     const slide = document.createElement('div');
     slide.className = 'carousel-slide';
-    if (i === 0) slide.classList.add('active');
 
-    // Extract picture from the row's cell structure
     const pic = row.querySelector('picture');
     if (pic) {
       const img = pic.querySelector('img');
@@ -25,7 +24,7 @@ export default function decorate(block) {
       slide.append(pic);
     }
 
-    slidesContainer.append(slide);
+    track.append(slide);
     return slide;
   });
 
@@ -46,13 +45,22 @@ export default function decorate(block) {
   // Navigation
   let current = 0;
   let timer;
+  let animating = false;
 
   function goToSlide(index) {
-    slides[current].classList.remove('active');
+    if (animating || index === current) return;
+    animating = true;
+
     dotButtons[current].classList.remove('active');
+    dotButtons[index].classList.add('active');
+
+    track.style.transform = `translateX(-${index * 100}%)`;
+
     current = index;
-    slides[current].classList.add('active');
-    dotButtons[current].classList.add('active');
+
+    setTimeout(() => {
+      animating = false;
+    }, TRANSITION_MS);
   }
 
   function advance() {
@@ -71,13 +79,13 @@ export default function decorate(block) {
   dotButtons.forEach((dot, i) => {
     dot.addEventListener('click', () => {
       goToSlide(i);
-      startAutoplay(); // reset timer on manual navigation
+      startAutoplay();
     });
   });
 
   // Assemble
   block.innerHTML = '';
-  block.append(slidesContainer, dots);
+  block.append(track, dots);
 
   // Start autoplay
   startAutoplay();

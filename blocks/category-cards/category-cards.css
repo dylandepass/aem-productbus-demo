@@ -23,7 +23,7 @@
 }
 
 .category-cards .category-card h3 {
-  font-size: var(--heading-font-size-m);
+  font-size: var(--heading-font-size-xl);
   font-weight: 300;
   margin: 0 0 var(--spacing-xxs);
 }
@@ -47,7 +47,7 @@
 
 /* Description */
 .category-cards .category-card-description {
-  font-size: var(--body-font-size-s);
+  font-size: var(--heading-font-size-s);
   margin: var(--spacing-xxs) 0;
   line-height: 1.4;
 }

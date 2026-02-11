@@ -93,8 +93,8 @@ main > .section.plp-container {
 
 .plp .plp-category-section h3 {
   font-weight: 300;
-  font-size: var(--heading-font-size-m);
-  margin: var(--spacing-xs) 0;
+  font-size: var(--heading-font-size-xl);
+  margin: var(--spacing-s) 0;
 }
 
 /* Product grid */
@@ -172,8 +172,8 @@ main > .section.plp-container {
 }
 
 .plp .plp-product-name {
-  font-size: 0.8125rem;
-  font-weight: 400;
+  font-size: 0.9375rem;
+  font-weight: 600;
   line-height: 1.4;
   margin: 0 0 4px;
   overflow: hidden;
@@ -182,7 +182,7 @@ main > .section.plp-container {
 }
 
 .plp .plp-product-price {
-  font-size: 0.8125rem;
+  font-size: 0.9375rem;
   margin: 0;
   line-height: 1.4;
 }

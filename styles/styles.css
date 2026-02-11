@@ -295,6 +295,12 @@ main > .section.hero {
   margin: 0;
 }
 
+main > .section.hero > .carousel-wrapper {
+  max-width: unset;
+  padding: 0;
+  margin: 0;
+}
+
 main > .section.hero .default-content-wrapper h2 {
   text-align: center;
   font-weight: 600;
