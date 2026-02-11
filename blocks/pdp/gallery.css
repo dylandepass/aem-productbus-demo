@@ -21,6 +21,12 @@
   width: 100%;
 }
 
+.gallery.carousel > ul > li img {
+  display: inline-block;
+  width: 100%;
+  height: auto;
+}
+
 .gallery.carousel nav {
   display: flex;
   align-items: flex-end;

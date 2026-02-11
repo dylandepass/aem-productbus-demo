@@ -217,28 +217,22 @@ export function buildCarousel(container, pagination = true) {
 function parseVariants(sections) {
   return sections.map((div) => {
     const name = div.querySelector('h2')?.textContent.trim();
-
-    const metadata = {};
-    const options = {};
-
-    options.uid = div.dataset.uid;
-    options.color = div.dataset.color;
-    metadata.sku = div.dataset.sku;
-
+    const sku = div.dataset.sku;
     const imagesHTML = div.querySelectorAll('picture');
 
-    const ldVariant = window.jsonLdData.offers.find((offer) => offer.sku === metadata.sku);
+    const ldVariant = window.jsonLdData.offers.find((offer) => offer.sku === sku);
     const price = getOfferPricing(ldVariant);
-    if (ldVariant) {
-      metadata.availability = ldVariant.availability;
-    }
+
+    // Get options from JSON-LD (supports color, size, and any other option types)
+    const options = ldVariant?.options || [];
 
     return {
-      ...metadata,
+      sku,
       name,
       options,
       price,
       images: imagesHTML,
+      availability: ldVariant?.availability,
     };
   });
 }
@@ -264,6 +258,17 @@ export function isProductOutOfStock() {
   if (!offers || offers.length === 0) return true;
 
   return !offers.some((offer) => offer.availability === 'https://schema.org/InStock');
+}
+
+/**
+ * Wraps all <img> elements inside <p> tags with a class for styling.
+ * @param {HTMLElement} main - Main container element
+ */
+function decorateImages(main) {
+  main.querySelectorAll('p img').forEach((img) => {
+    const p = img.closest('p');
+    p.className = 'img-wrapper';
+  });
 }
 
 /**
@@ -321,8 +326,9 @@ function buildPDPBlock(main) {
 
   const variantSections = Array.from(main.querySelectorAll(':scope > div.section'));
 
-  // Parse variants
+  // Parse variants and remove from DOM
   window.variants = parseVariants(variantSections);
+  variantSections.forEach((v) => v.remove());
 
   // Store remaining authored content sections
   window.authoredContent = Array.from(main.querySelectorAll(':scope > div'));
@@ -392,6 +398,7 @@ function buildAutoBlocks(main) {
 export function decorateMain(main) {
   decorateButtons(main);
   decorateIcons(main);
+  decorateImages(main);
   buildAutoBlocks(main);
   decorateSections(main);
   decorateBlocks(main);

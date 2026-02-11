@@ -85,12 +85,20 @@ export default async function decorate(block) {
     buyBox,
   );
 
+  // Check URL for pre-selected options
   const queryParams = new URLSearchParams(window.location.search);
-  const color = queryParams.get('color');
+  let hasUrlOptions = false;
+  if (window.selectedOptions) {
+    Object.keys(window.selectedOptions).forEach((optionId) => {
+      const urlVal = queryParams.get(optionId);
+      if (urlVal) {
+        hasUrlOptions = true;
+        onOptionChange(ph, block, variants, optionId, urlVal, isParentOutOfStock);
+      }
+    });
+  }
 
-  if (color) {
-    onOptionChange(ph, block, variants, color, isParentOutOfStock);
-  } else if (variants.length > 0) {
+  if (!hasUrlOptions && variants.length > 0) {
     [window.selectedVariant] = variants;
   }
 

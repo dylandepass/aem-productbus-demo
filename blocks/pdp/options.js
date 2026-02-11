@@ -5,6 +5,52 @@ import renderPricing from './pricing.js';
 import renderAddToCart from './add-to-cart.js';
 
 /**
+ * Gets the value of a specific option from a variant's options array.
+ * @param {Object} variant - The variant object
+ * @param {string} optionId - The option ID (e.g., "color", "size")
+ * @returns {string|undefined} The option value
+ */
+function getOptionValue(variant, optionId) {
+  const opt = variant.options.find((o) => o.id === optionId);
+  return opt?.value;
+}
+
+/**
+ * Extracts distinct option types and their unique values from all variants.
+ * @param {Array} variants - All product variants
+ * @returns {Array<{id: string, values: string[]}>} Option types with unique values
+ */
+function getOptionTypes(variants) {
+  const optionMap = new Map();
+
+  variants.forEach((variant) => {
+    (variant.options || []).forEach((opt) => {
+      if (!optionMap.has(opt.id)) {
+        optionMap.set(opt.id, new Set());
+      }
+      optionMap.get(opt.id).add(opt.value);
+    });
+  });
+
+  return [...optionMap.entries()].map(([id, values]) => ({
+    id,
+    values: [...values],
+  }));
+}
+
+/**
+ * Finds the variant matching all currently selected options.
+ * @param {Array} variants - All product variants
+ * @param {Object} selectedOptions - Map of optionId -> selected value (className form)
+ * @returns {Object|null} The matching variant
+ */
+function findVariant(variants, selectedOptions) {
+  return variants.find((v) => v.options.every(
+    (opt) => selectedOptions[opt.id] === toClassName(opt.value),
+  ));
+}
+
+/**
  * Updates the OOS message text based on whether parent or variant is out of stock.
  * @param {Object} ph - Placeholders object
  * @param {Element} oosMessage - The OOS message element
@@ -16,8 +62,19 @@ function updateOOSMessage(ph, oosMessage, isParentOutOfStock) {
   if (isParentOutOfStock) {
     oosMessage.textContent = ph.itemOutOfStock || 'This item is temporarily out of stock.';
   } else {
-    oosMessage.textContent = ph.colorOutOfStock || 'This color is temporarily out of stock.';
+    oosMessage.textContent = ph.optionOutOfStock || 'This selection is temporarily out of stock.';
   }
+}
+
+/**
+ * Updates the selected state of option swatches in a group.
+ * @param {Element} container - The options container for this group
+ * @param {string} selectedValue - The selected value (className form)
+ */
+function updateSelectionState(container, selectedValue) {
+  container.querySelectorAll('[data-option-value]').forEach((el) => {
+    el.classList.toggle('selected', el.dataset.optionValue === selectedValue);
+  });
 }
 
 /**
@@ -25,22 +82,32 @@ function updateOOSMessage(ph, oosMessage, isParentOutOfStock) {
  * @param {Object} ph - Placeholders object
  * @param {Element} block - The PDP block element
  * @param {Array} variants - The variants of the product
- * @param {string} color - The color of the selected option
+ * @param {string} optionId - The option ID that changed (e.g., "color", "size")
+ * @param {string} value - The new value (className form)
  * @param {boolean} isParentOutOfStock - Whether the parent product is out of stock
  */
-export function onOptionChange(ph, block, variants, color, isParentOutOfStock = false) {
-  if (variants[0].options.color.replace(/\s+/g, '-').toLowerCase() !== color) {
-    // eslint-disable-next-line no-restricted-globals
-    history.replaceState(null, '', `?color=${color}`);
-  } else {
-    // eslint-disable-next-line no-restricted-globals
-    history.replaceState(null, '', window.location.pathname);
-  }
+export function onOptionChange(ph, block, variants, optionId, value, isParentOutOfStock = false) {
+  // Update selected options state
+  window.selectedOptions[optionId] = value;
 
-  const selectedOptionLabel = block.querySelector('.selected-option-label');
-  const variant = variants.find(
-    (v) => v.options.color.replace(/\s+/g, '-').toLowerCase() === color,
-  );
+  // Update URL with all selected options
+  const params = new URLSearchParams();
+  const optionTypes = getOptionTypes(variants);
+  const firstVariant = variants[0];
+  optionTypes.forEach((type) => {
+    const selected = window.selectedOptions[type.id];
+    const defaultVal = toClassName(getOptionValue(firstVariant, type.id));
+    if (selected && selected !== defaultVal) {
+      params.set(type.id, selected);
+    }
+  });
+  const search = params.toString();
+  // eslint-disable-next-line no-restricted-globals
+  history.replaceState(null, '', search ? `?${search}` : window.location.pathname);
+
+  // Find the variant matching all selected options
+  const variant = findVariant(variants, window.selectedOptions);
+  if (!variant) return;
 
   const { sku } = variant;
   const oos = checkVariantOutOfStock(sku);
@@ -52,15 +119,28 @@ export function onOptionChange(ph, block, variants, color, isParentOutOfStock = 
   const oosMessage = block.querySelector('.pdp-oos-message');
   updateOOSMessage(ph, oosMessage, isParentOutOfStock);
 
-  // update pricing
+  // Update pricing
   const pricingContainer = renderPricing(ph, block, variant);
   if (pricingContainer) {
     block.querySelector('.pricing').replaceWith(pricingContainer);
   }
 
-  const variantColor = variant.options.color;
-  selectedOptionLabel.textContent = `${ph.color || 'Color'}: ${variantColor}`;
+  // Update all option labels and selection states
+  optionTypes.forEach((type) => {
+    const label = block.querySelector(`.selected-option-label[data-option-id="${type.id}"]`);
+    if (label) {
+      const selectedVal = window.selectedOptions[type.id];
+      const rawVal = type.values.find((v) => toClassName(v) === selectedVal) || selectedVal;
+      const displayVal = formatOptionLabel(type.id, rawVal);
+      label.textContent = `${type.id.charAt(0).toUpperCase() + type.id.slice(1)}: ${displayVal}`;
+    }
+    const optGroup = block.querySelector(`.pdp-option-group[data-option-id="${type.id}"]`);
+    if (optGroup) {
+      updateSelectionState(optGroup, window.selectedOptions[type.id]);
+    }
+  });
 
+  // Update gallery images
   let variantImages = variant.images || [];
   variantImages = [...variantImages].map((v, i) => {
     const clone = v.cloneNode(true);
@@ -88,22 +168,18 @@ export function onOptionChange(ph, block, variants, color, isParentOutOfStock = 
     }
   }
 
-  // reset scroll position to the first slide
   slides.scrollTo({ left: 0, behavior: 'smooth' });
 
-  // remove old variant slides and indices
   [slides, nav].forEach((wrapper) => {
     wrapper.querySelectorAll('[data-source="variant"]').forEach((v) => v.remove());
   });
 
-  // rebuild variant slides and insert after LCP
   const lcpSibling = lcpSlide.nextElementSibling;
   variantImages.slice(1).forEach((pic) => {
     const slide = buildSlide(pic, 'variant');
     if (slide) slides.insertBefore(slide, lcpSibling);
   });
 
-  // rebuild all indices
   rebuildIndices(gallery);
   buildThumbnails(gallery);
 
@@ -130,6 +206,101 @@ function renderOOSMessage(ph, element, isParentOutOfStock) {
 }
 
 /**
+ * Determines if an option type represents a color.
+ * @param {string} optionId - The option ID
+ * @returns {boolean}
+ */
+function isColorOption(optionId) {
+  return optionId.toLowerCase() === 'color';
+}
+
+/**
+ * Abbreviates a size value for display in compact swatches.
+ * @param {string} value - The full size value (e.g., "X-Small", "Medium", "XX-Large")
+ * @returns {string} The abbreviated size (e.g., "XS", "M", "XXL")
+ */
+function abbreviateSize(value) {
+  const sizeMap = {
+    'x-small': 'XS',
+    'extra small': 'XS',
+    'extra-small': 'XS',
+    small: 'S',
+    medium: 'M',
+    large: 'L',
+    'x-large': 'XL',
+    'extra large': 'XL',
+    'extra-large': 'XL',
+    'xx-large': 'XXL',
+    '2x-large': 'XXL',
+    'xxx-large': 'XXXL',
+    '3x-large': 'XXXL',
+  };
+  return sizeMap[value.toLowerCase()] || value;
+}
+
+/**
+ * Determines if an option type represents a size.
+ * @param {string} optionId - The option ID
+ * @returns {boolean}
+ */
+function isSizeOption(optionId) {
+  return optionId.toLowerCase() === 'size';
+}
+
+/**
+ * Formats an option value for display in the label.
+ * @param {string} optionId - The option ID
+ * @param {string} value - The raw option value
+ * @returns {string} The display value
+ */
+function formatOptionLabel(optionId, value) {
+  return value;
+}
+
+/**
+ * Renders a color swatch option.
+ * @param {string} value - The option value
+ * @param {string} className - The className form of the value
+ * @param {boolean} isOos - Whether this variant is out of stock
+ * @returns {Element}
+ */
+function renderColorSwatch(value, className, isOos) {
+  const swatch = document.createElement('div');
+  swatch.classList.add('pdp-option-swatch', 'pdp-color-swatch');
+  swatch.dataset.optionValue = className;
+  swatch.title = value;
+
+  const inner = document.createElement('div');
+  inner.classList.add('pdp-color-inner');
+  inner.style.backgroundColor = `var(--color-${className})`;
+  if (isOos) inner.classList.add('pdp-color-swatch-oos');
+  swatch.append(inner);
+
+  return swatch;
+}
+
+/**
+ * Renders a size/text option button.
+ * @param {string} value - The option value (e.g., "S", "M", "L", "XL")
+ * @param {string} className - The className form of the value
+ * @param {boolean} isOos - Whether this variant is out of stock
+ * @returns {Element}
+ */
+function renderSizeOption(value, className, isOos) {
+  const swatch = document.createElement('div');
+  swatch.classList.add('pdp-option-swatch', 'pdp-size-swatch');
+  swatch.dataset.optionValue = className;
+  swatch.title = value;
+
+  const label = document.createElement('span');
+  label.textContent = abbreviateSize(value);
+  if (isOos) swatch.classList.add('pdp-size-swatch-oos');
+  swatch.append(label);
+
+  return swatch;
+}
+
+/**
  * Renders the options section of the PDP block.
  * @param {Object} ph - Placeholders object
  * @param {Element} block - The PDP block element
@@ -152,42 +323,77 @@ export function renderOptions(ph, block, variants, isParentOutOfStock) {
     return optionsContainer;
   }
 
-  const selectionContainer = document.createElement('div');
-  selectionContainer.classList.add('selection');
+  // Extract distinct option types from all variants
+  const optionTypes = getOptionTypes(variants);
+  if (optionTypes.length === 0) {
+    return optionsContainer;
+  }
 
-  const selectedOptionLabel = document.createElement('div');
-  selectedOptionLabel.classList.add('selected-option-label');
-  selectedOptionLabel.textContent = `${ph.color || 'Color'}: ${variants[0].options.color}`;
-  selectionContainer.append(selectedOptionLabel);
-
-  const colors = variants.map((variant) => toClassName(variant.options.color));
-
-  const colorOptions = colors.map((color, index) => {
-    const { sku } = variants[index];
-    const colorOption = document.createElement('div');
-    colorOption.classList.add('pdp-color-swatch');
-
-    const colorSwatch = document.createElement('div');
-    colorSwatch.classList.add('pdp-color-inner');
-    colorSwatch.style.backgroundColor = `var(--color-${color})`;
-    if (checkVariantOutOfStock(sku)) {
-      colorSwatch.classList.add('pdp-color-swatch-oos');
-    }
-    colorOption.append(colorSwatch);
-
-    colorOption.addEventListener('click', () => {
-      onOptionChange(ph, block, variants, color, isParentOutOfStock);
-    });
-
-    return colorOption;
+  // Initialize selected options from first variant
+  window.selectedOptions = {};
+  const defaultVariant = variants[0];
+  optionTypes.forEach((type) => {
+    const defaultVal = getOptionValue(defaultVariant, type.id);
+    if (defaultVal) window.selectedOptions[type.id] = toClassName(defaultVal);
   });
 
-  const colorOptionsContainer = document.createElement('div');
-  colorOptionsContainer.classList.add('pdp-color-options');
-  colorOptionsContainer.append(...colorOptions);
-  selectionContainer.append(colorOptionsContainer);
+  // Render each option type group
+  optionTypes.forEach((type) => {
+    const selectionContainer = document.createElement('div');
+    selectionContainer.classList.add('selection');
 
-  optionsContainer.append(selectionContainer);
+    const defaultVal = getOptionValue(defaultVariant, type.id);
+    const displayVal = formatOptionLabel(type.id, defaultVal);
+    const selectedOptionLabel = document.createElement('div');
+    selectedOptionLabel.classList.add('selected-option-label');
+    selectedOptionLabel.dataset.optionId = type.id;
+    const typeLabel = type.id.charAt(0).toUpperCase() + type.id.slice(1);
+    selectedOptionLabel.textContent = `${typeLabel}: ${displayVal}`;
+    selectionContainer.append(selectedOptionLabel);
+
+    // Only render swatches if there are multiple values to choose from
+    if (type.values.length > 1) {
+      const optionGroup = document.createElement('div');
+      optionGroup.classList.add('pdp-option-group');
+      optionGroup.dataset.optionId = type.id;
+
+      type.values.forEach((value) => {
+        const className = toClassName(value);
+
+        // Check if any variant with this option value is OOS
+        const variantWithValue = variants.find(
+          (v) => getOptionValue(v, type.id)
+            && toClassName(getOptionValue(v, type.id)) === className,
+        );
+        const isOos = variantWithValue ? checkVariantOutOfStock(variantWithValue.sku) : true;
+
+        let swatch;
+        if (isColorOption(type.id)) {
+          swatch = renderColorSwatch(value, className, isOos);
+        } else if (isSizeOption(type.id)) {
+          swatch = renderSizeOption(value, className, isOos);
+        } else {
+          swatch = renderSizeOption(value, className, isOos);
+        }
+
+        // Mark default as selected
+        if (className === toClassName(defaultVal)) {
+          swatch.classList.add('selected');
+        }
+
+        swatch.addEventListener('click', () => {
+          onOptionChange(ph, block, variants, type.id, className, isParentOutOfStock);
+        });
+
+        optionGroup.append(swatch);
+      });
+
+      selectionContainer.append(optionGroup);
+    }
+
+    optionsContainer.append(selectionContainer);
+  });
+
   renderOOSMessage(ph, optionsContainer, isParentOutOfStock);
 
   return optionsContainer;
