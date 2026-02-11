@@ -35,12 +35,12 @@
 
 .gallery.carousel nav button.nav-arrow {
   top: calc(50% - 15px);
-  border-radius: 50%;
-  background-color: #e5e5e5;
-  color: #555;
+  border-radius: var(--radius-round);
+  background-color: var(--border-color);
+  color: var(--text-color-secondary);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s, left 0.2s, right 0.2s;
+  transition: opacity var(--transition-normal), left var(--transition-normal), right var(--transition-normal);
 }
 
 .gallery.carousel:hover nav button.nav-arrow {
@@ -61,7 +61,7 @@
 }
 
 .gallery.carousel:hover nav button.nav-arrow.nav-arrow-previous {
-  left: 8px;
+  left: var(--space-s);
 }
 
 .gallery.carousel nav button.nav-arrow.nav-arrow-next {
@@ -69,7 +69,7 @@
 }
 
 .gallery.carousel:hover nav button.nav-arrow.nav-arrow-next {
-  right: 8px;
+  right: var(--space-s);
 }
 
 .gallery.carousel nav [role="radiogroup"] {
@@ -92,15 +92,15 @@
   display: inline-block;
   width: 6px;
   height: 6px;
-  border: 1px solid #555;
-  border-radius: 50%;
+  border: 1px solid var(--text-color-secondary);
+  border-radius: var(--radius-round);
   background-color: transparent;
-  transition: border-color 0.2s, background-color 0.2s;
+  transition: border-color var(--transition-normal), background-color var(--transition-normal);
 }
 
 .gallery.carousel nav [role="radiogroup"] button[aria-checked="true"]::after {
   border-color: transparent;
-  background-color: var(--link-color, #035fe6);
+  background-color: var(--link-color);
 }
 
 .gallery.carousel nav [role="radiogroup"] button img {
@@ -110,11 +110,11 @@
 @media (width >= 900px) {
   .gallery.carousel {
     justify-self: start;
-    padding-bottom: calc(58px + 16px);
+    padding-bottom: calc(58px + var(--space-m));
   }
 
   .gallery.carousel nav button.nav-arrow {
-    top: calc(50% - 58px + 16px);
+    top: calc(50% - 58px + var(--space-m));
   }
 
   .gallery.carousel:hover nav button.nav-arrow.nav-arrow-previous {
@@ -126,7 +126,7 @@
   }
 
   .gallery.carousel nav [role="radiogroup"] {
-    gap: 8px;
+    gap: var(--space-s);
     justify-content: safe center;
   }
 
@@ -134,8 +134,9 @@
     width: 58px;
     min-width: 58px;
     height: 58px;
-    border: 1px solid #ccc;
-    transition: border-color 0.2s;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-s);
+    transition: border-color var(--transition-normal);
   }
 
   .gallery.carousel nav [role="radiogroup"] button::after {
@@ -143,10 +144,11 @@
   }
 
   .gallery.carousel nav [role="radiogroup"] button[aria-checked="true"] {
-    border-color: var(--text-color, #000);
+    border-color: var(--text-color);
   }
 
   .gallery.carousel nav [role="radiogroup"] button img {
     display: block;
+    border-radius: var(--radius-s);
   }
 }

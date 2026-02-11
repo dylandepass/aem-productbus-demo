@@ -16,8 +16,17 @@
   --light-color: #f8f8f8;
   --dark-color: #505050;
   --text-color: #131313;
+  --text-color-secondary: #555;
+  --text-color-muted: #999;
   --link-color: #3b63fb;
   --link-hover-color: #1d3ecf;
+  --border-color: #e8e8e8;
+  --border-color-strong: #333;
+  --accent-color: #b00;
+  --error-color: #c00;
+  --button-bg: #111;
+  --button-bg-hover: #000;
+  --button-bg-disabled: #ccc;
 
   /* fonts */
   --body-font-family: roboto, roboto-fallback, sans-serif;
@@ -35,6 +44,28 @@
   --heading-font-size-m: 27px;
   --heading-font-size-s: 24px;
   --heading-font-size-xs: 22px;
+
+  /* spacing */
+  --space-xs: 4px;
+  --space-s: 8px;
+  --space-m: 16px;
+  --space-l: 24px;
+  --space-xl: 32px;
+  --space-xxl: 48px;
+
+  /* border radius */
+  --radius-s: 4px;
+  --radius-m: 8px;
+  --radius-l: 16px;
+  --radius-round: 50%;
+
+  /* shadows */
+  --shadow-s: 0 1px 4px rgb(0 0 0 / 8%);
+  --shadow-m: 0 2px 8px rgb(0 0 0 / 12%);
+
+  /* transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
 
   /* nav height */
   --nav-height: 64px;

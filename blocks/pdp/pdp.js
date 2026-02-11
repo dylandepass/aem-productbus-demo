@@ -8,6 +8,7 @@ import {
   checkVariantOutOfStock,
   isProductOutOfStock,
 } from '../../scripts/scripts.js';
+import renderRelatedProducts from './related-products.js';
 
 /**
  * Gathers all product state needed by the PDP into a single context object.
@@ -142,10 +143,11 @@ export default async function decorate(block) {
   const gallery = renderGallery(block, ctx.variants);
   const buyBox = buildBuyBox(ctx);
   const content = renderAuthoredContent(block);
+  const related = renderRelatedProducts(ctx.ph);
 
   // Assemble layout
   if (content) block.append(content);
-  block.append(title, gallery, buyBox);
+  block.append(title, gallery, buyBox, related);
 
   // Apply initial state
   applyInitialSelection(ctx, buyBox);
