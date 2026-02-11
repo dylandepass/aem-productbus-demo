@@ -18,19 +18,31 @@
   --text-color: #131313;
   --text-color-secondary: #555;
   --text-color-muted: #999;
+  --text-color-inverse: #fff;
   --link-color: #3b63fb;
   --link-hover-color: #1d3ecf;
   --border-color: #e8e8e8;
   --border-color-strong: #333;
   --accent-color: #b00;
   --error-color: #c00;
-  --button-bg: #111;
-  --button-bg-hover: #000;
-  --button-bg-disabled: #ccc;
+
+  /* button - primary */
+  --button-primary-bg: #111;
+  --button-primary-color: #fff;
+  --button-primary-hover-bg: #000;
+  --button-primary-disabled-bg: #ccc;
+
+  /* button - secondary */
+  --button-secondary-bg: transparent;
+  --button-secondary-color: var(--text-color);
+
+  /* button - quiet */
+  --button-quiet-bg: transparent;
+  --button-quiet-color: #1473e6;
 
   /* fonts */
-  --body-font-family: roboto, roboto-fallback, sans-serif;
-  --heading-font-family: roboto-condensed, roboto-condensed-fallback, sans-serif;
+  --body-font-family: 'Adobe Clean', adobe-clean-fallback, sans-serif;
+  --heading-font-family: 'Adobe Clean', adobe-clean-fallback, sans-serif;
 
   /* body sizes */
   --body-font-size-m: 22px;
@@ -45,13 +57,18 @@
   --heading-font-size-s: 24px;
   --heading-font-size-xs: 22px;
 
-  /* spacing */
-  --space-xs: 4px;
-  --space-s: 8px;
-  --space-m: 16px;
-  --space-l: 24px;
-  --space-xl: 32px;
-  --space-xxl: 48px;
+  /* spacing (rem-based) */
+  --spacing-xxxs: 0.25rem;
+  --spacing-xxs: 0.5rem;
+  --spacing-xsmall: 0.8rem;
+  --spacing-xs: 1rem;
+  --spacing-14: 1.4rem;
+  --spacing-s: 1.5rem;
+  --spacing-small: 1.6rem;
+  --spacing-m: 2rem;
+  --spacing-28: 2.8rem;
+  --spacing-l: 3rem;
+  --spacing-xl: 5rem;
 
   /* border radius */
   --radius-s: 4px;
@@ -71,16 +88,10 @@
   --nav-height: 64px;
 }
 
-/* fallback fonts */
+/* fallback font */
 @font-face {
-  font-family: roboto-condensed-fallback;
-  size-adjust: 88.82%;
-  src: local('Arial');
-}
-
-@font-face {
-  font-family: roboto-fallback;
-  size-adjust: 99.529%;
+  font-family: adobe-clean-fallback;
+  size-adjust: 100.49%;
   src: local('Arial');
 }
 
@@ -277,6 +288,19 @@ main > .section:first-of-type {
   main > .section > div {
     padding: 0 32px;
   }
+}
+
+/* hero section with carousel */
+main > .section.hero {
+  margin: 0;
+}
+
+main > .section.hero .default-content-wrapper h2 {
+  text-align: center;
+  font-weight: 600;
+  max-width: 800px;
+  margin: var(--spacing-l) auto;
+  line-height: 1.2;
 }
 
 /* section metadata */

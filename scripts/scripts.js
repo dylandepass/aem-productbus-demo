@@ -272,6 +272,36 @@ function decorateImages(main) {
 }
 
 /**
+ * Wraps multiple pictures in the first section into a carousel block.
+ * Triggered when the section has hero-style metadata and multiple images.
+ * @param {Element} main The container element
+ */
+function buildCarouselBlock(main) {
+  const firstSection = main.querySelector(':scope > div');
+  if (!firstSection) return;
+
+  // Only auto-build if section has hero style metadata
+  const meta = firstSection.querySelector('.section-metadata');
+  if (!meta) return;
+  const styleRow = [...meta.querySelectorAll(':scope > div')].find((row) => {
+    const key = row.querySelector('div:first-child')?.textContent.trim().toLowerCase();
+    return key === 'style';
+  });
+  const style = styleRow?.querySelector('div:last-child')?.textContent.trim().toLowerCase();
+  if (style !== 'hero') return;
+
+  // Collect <p> elements that contain pictures
+  const picParagraphs = [...firstSection.querySelectorAll(':scope > p')].filter(
+    (p) => p.querySelector('picture'),
+  );
+  if (picParagraphs.length < 2) return;
+
+  // Build carousel block from the picture paragraphs
+  const carouselBlock = buildBlock('carousel', picParagraphs.map((p) => [p]));
+  firstSection.prepend(carouselBlock);
+}
+
+/**
  * Builds hero block and prepends to main in a new section.
  * @param {Element} main The container element
  */
@@ -383,6 +413,7 @@ function buildAutoBlocks(main) {
       document.body.classList.add('pdp-template');
     }
 
+    buildCarouselBlock(main);
     buildHeroBlock(main);
   } catch (error) {
     // eslint-disable-next-line no-console

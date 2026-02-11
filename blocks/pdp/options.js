@@ -320,13 +320,13 @@ export function renderOptions(ph, block, variants, isParentOutOfStock) {
 
   // if there are no variants, don't render anything
   if (!variants?.length) {
-    return optionsContainer;
+    return null;
   }
 
   // Extract distinct option types from all variants
   const optionTypes = getOptionTypes(variants);
   if (optionTypes.length === 0) {
-    return optionsContainer;
+    return null;
   }
 
   // Initialize selected options from first variant

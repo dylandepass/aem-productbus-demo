@@ -1,0 +1,59 @@
+/* Full-width in hero sections */
+.hero-container .carousel-wrapper {
+  max-width: unset;
+  padding: 0;
+}
+
+.carousel .carousel-slides {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.carousel .carousel-slide {
+  display: none;
+  width: 100%;
+}
+
+.carousel .carousel-slide.active {
+  display: block;
+}
+
+.carousel .carousel-slide picture {
+  display: block;
+}
+
+.carousel .carousel-slide img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Dot indicators */
+.carousel .carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: var(--spacing-xs) 0;
+}
+
+.carousel .carousel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--text-color-muted);
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.carousel .carousel-dot.active {
+  background-color: var(--text-color);
+  border-color: var(--text-color);
+}
+
+.carousel .carousel-dot:hover {
+  border-color: var(--text-color);
+}

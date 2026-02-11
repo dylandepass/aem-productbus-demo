@@ -60,8 +60,11 @@ function focusNavSection() {
  */
 function toggleAllNavSections(sections, expanded = false) {
   if (!sections) return;
-  sections.querySelectorAll('.nav-sections .default-content-wrapper > ul > li').forEach((section) => {
+  sections.querySelectorAll('.nav-sections-ul-wrapper > ul > li').forEach((section) => {
     section.setAttribute('aria-expanded', expanded);
+    if (!expanded || expanded === 'false') {
+      section.classList.remove('expanded');
+    }
   });
 }
 
@@ -134,18 +137,66 @@ export default async function decorate(block) {
   const brandLink = navBrand.querySelector('.button');
   if (brandLink) {
     brandLink.className = '';
-    brandLink.closest('.button-container').className = '';
+    // brandLink.closest('.button-container')?.className = '';
   }
 
   const navSections = nav.querySelector('.nav-sections');
   if (navSections) {
-    navSections.querySelectorAll(':scope .default-content-wrapper > ul > li').forEach((navSection) => {
+    // Wrap nav list in .nav-sections-ul-wrapper (expected by header.css for flyout/inline layout)
+    const navList = navSections.querySelector(':scope .default-content-wrapper > ul');
+    if (navList) {
+      const ulWrapper = document.createElement('div');
+      ulWrapper.className = 'nav-sections-ul-wrapper';
+      ulWrapper.append(navList);
+      navSections.prepend(ulWrapper);
+    }
+
+    // Convert nav text to links
+    const toSlug = (text) => text.toLowerCase().replace(/[&,]+/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+
+    navSections.querySelectorAll(':scope .nav-sections-ul-wrapper > ul > li').forEach((navSection) => {
+      // Convert top-level <p> to <a> with /{slug} href
+      const p = navSection.querySelector(':scope > p');
+      if (p) {
+        const text = p.textContent.trim();
+        const slug = toSlug(text);
+        const a = document.createElement('a');
+        a.href = `/${slug}`;
+        a.textContent = text;
+        p.replaceWith(a);
+      }
+
+      // Convert sub-items to <a> with /{parent-slug}#{sub-slug}
+      const parentLink = navSection.querySelector(':scope > a');
+      const parentSlug = parentLink ? toSlug(parentLink.textContent.trim()) : '';
+      navSection.querySelectorAll(':scope > ul > li').forEach((subItem) => {
+        if (!subItem.querySelector('a')) {
+          const text = subItem.textContent.trim();
+          const subSlug = toSlug(text);
+          const a = document.createElement('a');
+          a.href = `/${parentSlug}#${subSlug}`;
+          a.textContent = text;
+          subItem.textContent = '';
+          subItem.append(a);
+        }
+      });
+
       if (navSection.querySelector('ul')) navSection.classList.add('nav-drop');
-      navSection.addEventListener('click', () => {
+      navSection.addEventListener('click', (e) => {
         if (isDesktop.matches) {
           const expanded = navSection.getAttribute('aria-expanded') === 'true';
           toggleAllNavSections(navSections);
           navSection.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+        } else if (navSection.classList.contains('nav-drop')) {
+          e.preventDefault();
+          const isExpanded = navSection.classList.contains('expanded');
+          // collapse all siblings first
+          navSections.querySelectorAll('.nav-sections-ul-wrapper > ul > li.expanded').forEach((li) => {
+            li.classList.remove('expanded');
+          });
+          if (!isExpanded) {
+            navSection.classList.add('expanded');
+          }
         }
       });
     });

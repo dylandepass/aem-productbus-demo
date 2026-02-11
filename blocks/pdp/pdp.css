@@ -108,7 +108,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-xs);
+  gap: var(--spacing-xxxs);
   margin: 0;
   padding: 0;
 }
@@ -117,12 +117,12 @@
 .pdp-wrapper {
   display: flex;
   flex-direction: column;
-  gap: var(--space-xl);
+  gap: var(--spacing-m);
 }
 
 .pdp {
   display: grid;
-  gap: var(--space-l) var(--space-xl);
+  gap: var(--spacing-s) var(--spacing-m);
   grid-template-columns: 100%;
   grid-template-areas:
     "title"
@@ -154,15 +154,15 @@
 .options {
   display: flex;
   flex-direction: column;
-  gap: var(--space-m);
-  padding-top: var(--space-m);
+  gap: var(--spacing-xs);
+  padding-top: var(--spacing-xs);
   border-top: 1px solid var(--border-color);
 }
 
 .selection {
   display: flex;
   flex-direction: column;
-  gap: var(--space-s);
+  gap: var(--spacing-xxs);
 }
 
 .selected-option-label {
@@ -176,7 +176,7 @@
 .pdp-option-group {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-s);
+  gap: var(--spacing-xxs);
 }
 
 /* shared option swatch base */
@@ -240,7 +240,7 @@
   height: 42px;
   border: 1.5px solid var(--border-color);
   border-radius: var(--radius-m);
-  padding: 0 var(--space-s);
+  padding: 0 var(--spacing-xxs);
   font-size: var(--body-font-size-xs);
   font-weight: 500;
   color: var(--text-color);
@@ -301,7 +301,7 @@
   font-size: var(--body-font-size-xs);
   font-weight: 400;
   color: var(--text-color-secondary);
-  padding-top: var(--space-xs);
+  padding-top: var(--spacing-xxxs);
 }
 
 .pricing-savings del {
@@ -312,8 +312,8 @@
 .add-to-cart {
   display: flex;
   flex-direction: column;
-  gap: var(--space-m);
-  padding-top: var(--space-m);
+  gap: var(--spacing-xs);
+  padding-top: var(--spacing-xs);
   border-top: 1px solid var(--border-color);
 }
 
@@ -328,7 +328,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-s);
+  gap: var(--spacing-xxs);
 }
 
 .add-to-cart select {
@@ -342,7 +342,7 @@
   background-size: 14px;
   border: 1.5px solid var(--border-color);
   border-radius: var(--radius-m);
-  padding: 0 30px 0 var(--space-m);
+  padding: 0 30px 0 var(--spacing-xs);
   font-size: var(--body-font-size-s);
   font-weight: 500;
   color: var(--text-color);
@@ -362,11 +362,11 @@
 .add-to-cart button {
   flex: 1;
   min-width: 200px;
-  padding: 14px var(--space-xl);
+  padding: 14px var(--spacing-m);
   font-size: var(--body-font-size-s);
   font-weight: 600;
   letter-spacing: 0.03em;
-  background-color: var(--button-bg);
+  background-color: var(--button-primary-bg);
   color: var(--background-color);
   border: none;
   border-radius: var(--radius-m);
@@ -375,12 +375,12 @@
 }
 
 .add-to-cart button:hover {
-  background-color: var(--button-bg-hover);
+  background-color: var(--button-primary-hover-bg);
   box-shadow: var(--shadow-m);
 }
 
 .add-to-cart button[aria-disabled="true"] {
-  background-color: var(--button-bg-disabled);
+  background-color: var(--button-primary-disabled-bg);
   color: var(--text-color-muted);
   cursor: not-allowed;
   box-shadow: none;
@@ -407,7 +407,7 @@
 /* content */
 .content {
   grid-area: content;
-  padding-top: var(--space-xl);
+  padding-top: var(--spacing-m);
   border-top: 1px solid var(--border-color);
 }
 
@@ -416,30 +416,28 @@
 }
 
 .section.pdp-container {
-  margin-top: var(--space-m);
+  margin-top: var(--spacing-xs);
 }
 
 main > .section.pdp-container > div.pdp-wrapper:first-child:not(.default-content-wrapper) {
-  margin-top: var(--space-m);
+  margin-top: var(--spacing-xs);
 }
 
 /* desktop layout */
 @media (width >= 900px) {
   .pdp {
-    padding-top: var(--space-l);
+    padding-top: var(--spacing-s);
     grid-template-columns: 2fr 3fr;
     grid-template-rows: min-content 1fr auto;
     /* stylelint-disable-next-line declaration-block-no-redundant-longhand-properties */
     grid-template-areas:
       "title gallery"
       "buy-box gallery"
-      "content content"
+      "content gallery"
       "related related";
   }
 
   .pdp-buy-box {
-    position: sticky;
-    top: var(--space-l);
     align-self: start;
   }
 

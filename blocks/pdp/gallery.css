@@ -61,7 +61,7 @@
 }
 
 .gallery.carousel:hover nav button.nav-arrow.nav-arrow-previous {
-  left: var(--space-s);
+  left: var(--spacing-xxs);
 }
 
 .gallery.carousel nav button.nav-arrow.nav-arrow-next {
@@ -69,7 +69,7 @@
 }
 
 .gallery.carousel:hover nav button.nav-arrow.nav-arrow-next {
-  right: var(--space-s);
+  right: var(--spacing-xxs);
 }
 
 .gallery.carousel nav [role="radiogroup"] {
@@ -110,11 +110,11 @@
 @media (width >= 900px) {
   .gallery.carousel {
     justify-self: start;
-    padding-bottom: calc(58px + var(--space-m));
+    padding-bottom: calc(58px + var(--spacing-xs));
   }
 
   .gallery.carousel nav button.nav-arrow {
-    top: calc(50% - 58px + var(--space-m));
+    top: calc(50% - 58px + var(--spacing-xs));
   }
 
   .gallery.carousel:hover nav button.nav-arrow.nav-arrow-previous {
@@ -126,7 +126,7 @@
   }
 
   .gallery.carousel nav [role="radiogroup"] {
-    gap: var(--space-s);
+    gap: var(--spacing-xxs);
     justify-content: safe center;
   }
 
