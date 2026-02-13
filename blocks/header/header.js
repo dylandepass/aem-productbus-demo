@@ -215,6 +215,57 @@ export default async function decorate(block) {
   toggleMenu(nav, navSections, isDesktop.matches);
   isDesktop.addEventListener('change', () => toggleMenu(nav, navSections, isDesktop.matches));
 
+  // cart button + minicart
+  const navTools = nav.querySelector('.nav-tools');
+  if (navTools) {
+    const cartBtn = document.createElement('button');
+    cartBtn.className = 'nav-cart-button';
+    cartBtn.type = 'button';
+    cartBtn.setAttribute('aria-label', 'Cart');
+    navTools.append(cartBtn);
+
+    // lazy-init minicart and commerce on first interaction or cart event
+    let drawer = null;
+    async function ensureMinicart() {
+      if (drawer) return drawer;
+      const [minicartMod, { commerce }] = await Promise.all([
+        import('./minicart.js'),
+        import('../../scripts/commerce/api.js'),
+      ]);
+      drawer = minicartMod.default(nav);
+
+      // sync badge + drawer on every cart update
+      commerce.on(commerce.EVENTS.CART_UPDATED, (e) => {
+        const { cart } = e.detail;
+        if (cart.itemCount > 0) {
+          cartBtn.dataset.count = cart.itemCount;
+        } else {
+          delete cartBtn.dataset.count;
+        }
+        drawer.refresh(cart);
+      });
+
+      // initial state
+      const cart = await commerce.getCart();
+      if (cart.itemCount > 0) cartBtn.dataset.count = cart.itemCount;
+      drawer.refresh(cart);
+      return drawer;
+    }
+
+    cartBtn.addEventListener('click', async () => {
+      const d = await ensureMinicart();
+      d.open();
+    });
+
+    // eagerly listen for add-to-cart so minicart opens even before user clicks the icon
+    document.addEventListener('commerce:cart-updated', async (e) => {
+      if (e.detail?.action === 'add') {
+        const d = await ensureMinicart();
+        d.open();
+      }
+    });
+  }
+
   const navWrapper = document.createElement('div');
   navWrapper.className = 'nav-wrapper';
   navWrapper.append(nav);

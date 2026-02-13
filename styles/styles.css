@@ -26,6 +26,21 @@
   --accent-color: #b00;
   --error-color: #c00;
 
+  /* product color swatches */
+  --color-black: #000;
+  --color-blue: #2563eb;
+  --color-burgundy: #800020;
+  --color-cream: #fffdd0;
+  --color-golden-brown: #996515;
+  --color-gray: #808080;
+  --color-grey: #808080;
+  --color-multi: linear-gradient(135deg, #ef4444 25%, #f59e0b 25%, #f59e0b 50%, #22c55e 50%, #22c55e 75%, #3b82f6 75%);
+  --color-navy: #001f3f;
+  --color-red: #dc2626;
+  --color-vintage-red: #a52a2a;
+  --color-white: #fff;
+  --color-yellow: #facc15;
+
   /* button - primary */
   --button-primary-bg: #111;
   --button-primary-color: #fff;

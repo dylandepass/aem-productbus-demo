@@ -214,6 +214,10 @@
   position: relative;
 }
 
+.pdp-color-inner.pdp-color-light {
+  border-color: #ccc;
+}
+
 .pdp-color-swatch-oos.pdp-color-inner::after {
   content: "";
   position: absolute;

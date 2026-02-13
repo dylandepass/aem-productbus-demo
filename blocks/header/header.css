@@ -540,24 +540,39 @@ header nav .nav-tools button.nav-cart-button {
     background-image: url('../../icons/cart.svg');
     background-repeat: no-repeat;
     background-position: center;
-    background-size: contain;
+    background-size: 20px 20px;
     position: relative;
-    margin-right:18px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    display: block;
+    border-radius: 0;
+    line-height: 1;
 }
 
 header nav .nav-tools button.nav-cart-button[data-count]::after {
     content: attr(data-count);
-    color: var(--text-color);
-    border-radius: 50%;
     position: absolute;
-    left: calc(100% + var(--spacing-xs) / 2);
+    top: -6px;
+    right: -10px;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    background: var(--accent-color);
+    color: var(--text-color-inverse);
+    font-size: 0.6875rem;
+    font-weight: 600;
     display: flex;
     align-items: center;
-    font-size: 1.6rem;
     justify-content: center;
+    padding: 0 4px;
+    box-sizing: border-box;
+    line-height: 1;
 }
 
 header nav .nav-tools button.nav-search-button {
@@ -594,9 +609,239 @@ header .nav-search-panel input {
     }
 }
 
-/* Mini Cart  */
-.cart-mini-cart:not(:has(.cart-empty-cart)) {
-    max-height: 760px;
+/* --- Minicart drawer --- */
+
+.minicart-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 50%);
+  z-index: 998;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.minicart-overlay.minicart-overlay-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.minicart-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 100%;
+  max-width: 420px;
+  height: 100%;
+  z-index: 999;
+  background: var(--background-color);
+  box-shadow: -4px 0 24px rgb(0 0 0 / 12%);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+}
+
+.minicart-drawer.minicart-open {
+  transform: translateX(0);
+}
+
+.minicart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-xs) var(--spacing-s);
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.minicart-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.minicart-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-s);
+  transition: background var(--transition-fast);
+}
+
+.minicart-close:hover {
+  background: var(--light-color);
+}
+
+/* items list */
+.minicart-items {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-xs) var(--spacing-s);
+}
+
+.minicart-item {
+  display: flex;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.minicart-item:last-child {
+  border-bottom: none;
+}
+
+.minicart-item-image {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: var(--radius-s);
+  background: var(--light-color);
+  flex-shrink: 0;
+}
+
+.minicart-item-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xxxs);
+  min-width: 0;
+  flex: 1;
+}
+
+.minicart-item-name {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--text-color);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.minicart-item-name:hover {
+  color: var(--link-color);
+}
+
+.minicart-item-price {
+  font-size: 0.8125rem;
+  color: var(--text-color-secondary);
+}
+
+.minicart-item-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--spacing-xxxs);
+}
+
+.minicart-item-qty {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-s);
+  overflow: hidden;
+}
+
+.minicart-qty-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: var(--light-color);
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition-fast);
+}
+
+.minicart-qty-btn:hover {
+  background: var(--border-color);
+}
+
+.minicart-qty-value {
+  width: 32px;
+  text-align: center;
+  font-size: 0.8125rem;
+  border-left: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  line-height: 28px;
+}
+
+.minicart-item-remove {
+  border: none;
+  background: none;
+  color: var(--text-color-muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  transition: color var(--transition-fast);
+}
+
+.minicart-item-remove:hover {
+  color: var(--error-color);
+}
+
+/* empty state */
+.minicart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 200px;
+}
+
+.minicart-empty p {
+  color: var(--text-color-muted);
+  font-size: 1rem;
+}
+
+/* footer */
+.minicart-footer {
+  flex-shrink: 0;
+  padding: var(--spacing-xs) var(--spacing-s);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xxs);
+}
+
+.minicart-subtotal {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.minicart-view-cart,
+.minicart-view-cart:link,
+.minicart-view-cart:visited,
+.minicart-view-cart:hover,
+.minicart-view-cart:active {
+  display: block;
+  text-align: center;
+  padding: 0.75rem;
+  background: var(--button-primary-bg);
+  color: var(--button-primary-color);
+  text-decoration: none;
+  border-radius: var(--radius-m);
+  font-weight: 500;
+  font-size: 0.9375rem;
+  transition: background var(--transition-fast);
+}
+
+.minicart-view-cart:hover {
+  background: var(--button-primary-hover-bg);
 }
 
 /* Login */

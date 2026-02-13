@@ -1,0 +1,124 @@
+/**
+ * Commerce API — the single public interface for all commerce operations.
+ *
+ * UI blocks import { commerce } from this module. The active adapter
+ * (mock, edge, shopify, etc.) is resolved at runtime and lazy-loaded
+ * on first call.
+ *
+ * @module commerce/api
+ */
+
+import { EVENTS, dispatch, listen } from './events.js';
+
+/**
+ * Default adapter. Change this to switch backends site-wide.
+ * Valid values: 'mock', 'edge'
+ * @type {string}
+ */
+const ADAPTER = 'edge';
+
+/** @type {Object|null} Cached adapter instance */
+let adapter = null;
+
+/** @type {Promise<Object>|null} In-flight adapter loading promise */
+let loading = null;
+
+/**
+ * Resolves the adapter name from localStorage override or default constant.
+ * @returns {string}
+ */
+function getAdapterName() {
+  return localStorage.getItem('commerce-adapter') || ADAPTER;
+}
+
+/**
+ * Lazy-loads and caches the configured adapter.
+ * @returns {Promise<Object>} The adapter instance
+ */
+async function loadAdapter() {
+  if (adapter) return adapter;
+  if (loading) return loading;
+
+  const name = getAdapterName();
+  loading = import(`./adapters/${name}.js`).then((mod) => {
+    adapter = mod.default();
+    loading = null;
+    return adapter;
+  });
+
+  return loading;
+}
+
+/**
+ * Public commerce API.
+ *
+ * Every method lazy-loads the adapter on first call. Cart-mutating methods
+ * dispatch standardized events after the adapter completes its work.
+ */
+export const commerce = {
+  // --- Cart ---
+
+  async addToCart(item) {
+    const a = await loadAdapter();
+    const cart = await a.addToCart(item);
+    dispatch(EVENTS.CART_UPDATED, { cart, item, action: 'add' });
+    return cart;
+  },
+
+  async getCart() {
+    const a = await loadAdapter();
+    return a.getCart();
+  },
+
+  async updateItemQuantity(sku, quantity) {
+    const a = await loadAdapter();
+    const cart = await a.updateItemQuantity(sku, quantity);
+    dispatch(EVENTS.CART_UPDATED, { cart, sku, quantity, action: 'update' });
+    return cart;
+  },
+
+  async removeItem(sku) {
+    const a = await loadAdapter();
+    const cart = await a.removeItem(sku);
+    dispatch(EVENTS.CART_UPDATED, { cart, sku, action: 'remove' });
+    return cart;
+  },
+
+  async clearCart() {
+    const a = await loadAdapter();
+    await a.clearCart();
+    const empty = {
+      items: [], itemCount: 0, subtotal: 0, shipping: 0,
+    };
+    dispatch(EVENTS.CART_UPDATED, { cart: empty, action: 'clear' });
+  },
+
+  // --- Orders ---
+
+  async createOrder({ customer, shipping }) {
+    const a = await loadAdapter();
+    const order = await a.createOrder({ customer, shipping });
+    dispatch(EVENTS.ORDER_CREATED, { order });
+    return order;
+  },
+
+  async getOrder(orderId, email) {
+    const a = await loadAdapter();
+    return a.getOrder(orderId, email);
+  },
+
+  // --- Auth ---
+
+  isLoggedIn() {
+    return adapter?.isLoggedIn() ?? false;
+  },
+
+  getCustomer() {
+    return adapter?.getCustomer() ?? null;
+  },
+
+  // --- Events ---
+
+  EVENTS,
+  on: listen,
+};

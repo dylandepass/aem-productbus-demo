@@ -1,4 +1,4 @@
-import { checkVariantOutOfStock } from '../../scripts/scripts.js';
+import { checkVariantOutOfStock, getOfferPricing } from '../../scripts/scripts.js';
 
 /**
  * Checks if a variant is available for sale.
@@ -12,8 +12,6 @@ export function isVariantAvailableForSale(variant) {
 
 /**
  * Renders the add to cart section with quantity selector and button.
- * In this demo, the add-to-cart action logs to the console.
- * A real implementation would integrate with a commerce backend.
  * @param {Object} ph - Placeholders object
  * @param {Element} block - The PDP block element
  * @param {Object} parent - Parent product JSON-LD data
@@ -63,21 +61,32 @@ export default function renderAddToCart(ph, block, parent) {
   const addToCartButton = document.createElement('button');
   addToCartButton.textContent = ph.addToCart || 'Add to Cart';
 
-  addToCartButton.addEventListener('click', () => {
+  addToCartButton.addEventListener('click', async () => {
     addToCartButton.textContent = ph.adding || 'Adding...';
     addToCartButton.setAttribute('aria-disabled', 'true');
 
-    const quantity = quantitySelect.value;
-    const sku = selectedVariant.sku || window.selectedVariant?.sku;
+    const quantity = +quantitySelect.value;
+    const variant = selectedVariant || window.selectedVariant;
+    const sku = variant?.sku;
+    const pricing = getOfferPricing(variant);
 
-    // Demo: log to console. Replace with commerce backend integration.
-    // eslint-disable-next-line no-console
-    console.log('Add to cart:', { sku, quantity: +quantity });
-
-    setTimeout(() => {
+    try {
+      const { commerce } = await import('../../scripts/commerce/api.js');
+      await commerce.addToCart({
+        sku,
+        name: window.jsonLdData?.name || '',
+        quantity,
+        price: pricing?.final || 0,
+        image: block.querySelector('.gallery img')?.src || variant?.image?.[0] || '',
+        url: window.location.pathname,
+      });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to add to cart', err);
+    } finally {
       addToCartButton.textContent = ph.addToCart || 'Add to Cart';
       addToCartButton.removeAttribute('aria-disabled');
-    }, 1000);
+    }
   });
 
   quantityContainer.appendChild(addToCartButton);

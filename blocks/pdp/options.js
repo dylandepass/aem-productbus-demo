@@ -272,7 +272,10 @@ function renderColorSwatch(value, className, isOos) {
 
   const inner = document.createElement('div');
   inner.classList.add('pdp-color-inner');
-  inner.style.backgroundColor = `var(--color-${className})`;
+  inner.style.background = `var(--color-${className})`;
+  if (className === 'white' || className === 'cream') {
+    inner.classList.add('pdp-color-light');
+  }
   if (isOos) inner.classList.add('pdp-color-swatch-oos');
   swatch.append(inner);
 
