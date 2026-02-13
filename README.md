@@ -4,15 +4,6 @@ A reference e-commerce storefront built on AEM Edge Delivery Services (EDS) and 
 
 ## Architecture overview
 
-```
-┌──────────────┐     ┌──────────────────┐     ┌──────────────┐
-│   AEM EDS    │     │  Product Bus /   │     │  Cloudflare  │
-│  (content +  │────▶│  Product Pipeline │────▶│   Worker     │
-│   delivery)  │     │  (product data)  │     │  (orders     │
-└──────────────┘     └──────────────────┘     │   proxy)     │
-                                               └──────────────┘
-```
-
 The site consumes product data from the Product Bus through two mechanisms:
 
 1. **Product Pipeline** renders product HTML pages with embedded JSON-LD structured data. The PDP block reads this data at runtime — `window.jsonLdData` for product metadata and `window.variants` for variant information — and builds the interactive product experience on top of it.
