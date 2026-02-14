@@ -102,19 +102,49 @@ export const commerce = {
     return order;
   },
 
-  async getOrder(orderId, email) {
+  async getOrder(orderId) {
     const a = await loadAdapter();
-    return a.getOrder(orderId, email);
+    return a.getOrder(orderId);
   },
 
   // --- Auth ---
 
-  isLoggedIn() {
-    return adapter?.isLoggedIn() ?? false;
+  async login(email) {
+    const a = await loadAdapter();
+    return a.login(email);
   },
 
-  getCustomer() {
-    return adapter?.getCustomer() ?? null;
+  async verifyCode(email, code, hash, exp) {
+    const a = await loadAdapter();
+    const result = await a.verifyCode(email, code, hash, exp);
+    dispatch(EVENTS.AUTH_STATE_CHANGED, { loggedIn: true, email: result.email });
+    return result;
+  },
+
+  async logout() {
+    const a = await loadAdapter();
+    await a.logout();
+    dispatch(EVENTS.AUTH_STATE_CHANGED, { loggedIn: false, email: null });
+  },
+
+  async isLoggedIn() {
+    const a = await loadAdapter();
+    return a.isLoggedIn();
+  },
+
+  async getCustomer() {
+    const a = await loadAdapter();
+    return a.getCustomer();
+  },
+
+  async getCustomerProfile() {
+    const a = await loadAdapter();
+    return a.getCustomerProfile();
+  },
+
+  async getOrders() {
+    const a = await loadAdapter();
+    return a.getOrders();
   },
 
   // --- Events ---

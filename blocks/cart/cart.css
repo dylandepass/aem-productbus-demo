@@ -176,6 +176,10 @@
 
 /* --- Empty state --- */
 
+.cart-layout.cart-layout-empty {
+  grid-template-columns: 1fr;
+}
+
 .cart-empty {
   text-align: center;
   padding: var(--spacing-xl) 0;
@@ -345,6 +349,41 @@ select.cart-input {
 /* validation error */
 .cart-input-error {
   border-color: var(--error-color);
+}
+
+.cart-field-error {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--error-color);
+  margin-top: 2px;
+}
+
+/* Google Places autocomplete dropdown */
+.pac-container {
+  z-index: 10000;
+  font-family: var(--body-font-family);
+  border-radius: var(--radius-s);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 10%);
+  margin-top: 4px;
+}
+
+.pac-item {
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.pac-item:hover {
+  background: var(--light-color);
+}
+
+.pac-icon {
+  display: none;
+}
+
+.pac-item-query {
+  font-weight: 500;
 }
 
 /* disabled button */

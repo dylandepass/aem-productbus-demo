@@ -6,6 +6,7 @@ export const EVENTS = {
   CART_UPDATED: 'commerce:cart-updated',
   CART_EMPTY: 'commerce:cart-empty',
   ORDER_CREATED: 'commerce:order-created',
+  AUTH_STATE_CHANGED: 'commerce:auth-state-changed',
 };
 
 /**

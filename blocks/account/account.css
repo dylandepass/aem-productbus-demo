@@ -1,0 +1,136 @@
+/* Account block */
+
+.account-wrapper {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--spacing-m) var(--spacing-xs);
+}
+
+/* Profile */
+
+.account-profile h2 {
+  font-size: var(--heading-font-size-m);
+  font-weight: 600;
+  margin: 0 0 var(--spacing-xs);
+}
+
+.account-details {
+  margin-bottom: var(--spacing-s);
+}
+
+.account-details p {
+  margin: var(--spacing-xxxs) 0;
+}
+
+.account-name {
+  font-weight: 600;
+  font-size: 1.125rem;
+}
+
+.account-email {
+  color: var(--text-color-secondary);
+}
+
+.account-phone {
+  color: var(--text-color-secondary);
+  font-size: 0.875rem;
+}
+
+.account-logout-btn {
+  padding: 0.5rem 1.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-m);
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.875rem;
+  color: var(--text-color);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.account-logout-btn:hover {
+  background: var(--light-color);
+  border-color: #ccc;
+}
+
+/* Orders */
+
+.account-orders {
+  margin-top: var(--spacing-s);
+  padding-top: var(--spacing-s);
+  border-top: 1px solid var(--border-color);
+}
+
+.account-orders h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 var(--spacing-xs);
+}
+
+.account-orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.account-orders-table th,
+.account-orders-table td {
+  text-align: left;
+  padding: var(--spacing-xxs) var(--spacing-xs);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.account-orders-table th {
+  font-weight: 600;
+  color: var(--text-color-secondary);
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.account-orders-table tbody tr:hover {
+  background: var(--light-color);
+}
+
+/* Login prompt */
+
+.account-login-prompt {
+  text-align: center;
+  padding: var(--spacing-xl) 0;
+}
+
+.account-login-prompt h2 {
+  font-size: var(--heading-font-size-m);
+  font-weight: 600;
+  margin: 0 0 var(--spacing-xxs);
+}
+
+.account-login-prompt p {
+  color: var(--text-color-secondary);
+  margin: 0 0 var(--spacing-s);
+}
+
+.account-signin-btn {
+  padding: 0.75rem 2rem;
+  background: var(--button-primary-bg);
+  color: var(--button-primary-color);
+  border: none;
+  border-radius: var(--radius-m);
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+
+.account-signin-btn:hover {
+  background: var(--button-primary-hover-bg);
+}
+
+/* Loading / empty states */
+
+.account-loading,
+.account-empty {
+  color: var(--text-color-muted);
+  font-size: 0.9375rem;
+}

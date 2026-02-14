@@ -10,6 +10,8 @@ const STORAGE_VERSION = 1;
 const SHIPPING_THRESHOLD = 150;
 const SHIPPING_COST = 10;
 const COOKIE_EXPIRY_DAYS = 30;
+const AUTH_TOKEN_KEY = 'auth_token';
+const AUTH_USER_KEY = 'auth_user';
 
 // --- Cart storage ---
 
@@ -62,6 +64,27 @@ function buildCart() {
 
 // Restore cart from localStorage on module load
 restore();
+
+// --- Auth helpers ---
+
+function authFetch(url, options = {}) {
+  const token = sessionStorage.getItem(AUTH_TOKEN_KEY);
+  if (!token) throw new Error('Not authenticated');
+
+  const headers = new Headers(options.headers || {});
+  headers.set('Authorization', `Bearer ${token}`);
+
+  return fetch(url, { ...options, headers }).then((resp) => {
+    if (resp.status === 401) {
+      sessionStorage.removeItem(AUTH_TOKEN_KEY);
+      localStorage.removeItem(AUTH_USER_KEY);
+      document.dispatchEvent(new CustomEvent('commerce:auth-state-changed', {
+        detail: { loggedIn: false, email: null, reason: 'token_expired' },
+      }));
+    }
+    return resp;
+  });
+}
 
 // --- Adapter factory ---
 
@@ -125,9 +148,13 @@ export default function createEdgeAdapter() {
         })),
       };
 
+      const headers = { 'Content-Type': 'application/json' };
+      const token = sessionStorage.getItem(AUTH_TOKEN_KEY);
+      if (token) headers.Authorization = `Bearer ${token}`;
+
       const resp = await fetch(`${API_ORIGIN}/orders`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(body),
       });
 
@@ -139,9 +166,14 @@ export default function createEdgeAdapter() {
       return data.order;
     },
 
-    async getOrder(orderId, email) {
+    async getOrder(orderId) {
+      const token = sessionStorage.getItem(AUTH_TOKEN_KEY);
+      const headers = {};
+      if (token) headers.Authorization = `Bearer ${token}`;
+
       const resp = await fetch(
-        `${API_ORIGIN}/orders/${encodeURIComponent(orderId)}?email=${encodeURIComponent(email)}`,
+        `${API_ORIGIN}/orders/${encodeURIComponent(orderId)}`,
+        { headers },
       );
       if (!resp.ok) {
         throw new Error(`Order fetch failed: ${resp.status}`);
@@ -150,9 +182,89 @@ export default function createEdgeAdapter() {
       return data.order;
     },
 
-    // Auth (edge mode has no auth)
+    // Auth
 
-    isLoggedIn() { return false; },
-    getCustomer() { return null; },
+    async login(email) {
+      const resp = await fetch(`${API_ORIGIN}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.message || `Login failed: ${resp.status}`);
+      }
+      return resp.json();
+    },
+
+    async verifyCode(email, code, hash, exp) {
+      const resp = await fetch(`${API_ORIGIN}/auth/callback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email, code, hash, exp,
+        }),
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.message || `Verification failed: ${resp.status}`);
+      }
+      const data = await resp.json();
+      if (data.token) {
+        sessionStorage.setItem(AUTH_TOKEN_KEY, data.token);
+      }
+      localStorage.setItem(AUTH_USER_KEY, JSON.stringify({
+        email: data.email,
+        roles: data.roles,
+      }));
+      return data;
+    },
+
+    async logout() {
+      const token = sessionStorage.getItem(AUTH_TOKEN_KEY);
+      try {
+        await fetch(`${API_ORIGIN}/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+      } catch { /* best-effort */ }
+      sessionStorage.removeItem(AUTH_TOKEN_KEY);
+      localStorage.removeItem(AUTH_USER_KEY);
+    },
+
+    isLoggedIn() {
+      return !!sessionStorage.getItem(AUTH_TOKEN_KEY);
+    },
+
+    getCustomer() {
+      const raw = localStorage.getItem(AUTH_USER_KEY);
+      if (!raw) return null;
+      try { return JSON.parse(raw); } catch { return null; }
+    },
+
+    async getCustomerProfile() {
+      const user = this.getCustomer();
+      if (!user?.email) return null;
+      const resp = await authFetch(
+        `${API_ORIGIN}/customers/${encodeURIComponent(user.email)}`,
+      );
+      if (!resp.ok) return null;
+      const data = await resp.json();
+      return data.customer || data;
+    },
+
+    async getOrders() {
+      const user = this.getCustomer();
+      if (!user?.email) return [];
+      const resp = await authFetch(
+        `${API_ORIGIN}/customers/${encodeURIComponent(user.email)}/orders`,
+      );
+      if (!resp.ok) return [];
+      const data = await resp.json();
+      return data.orders || [];
+    },
   };
 }

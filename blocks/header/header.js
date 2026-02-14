@@ -215,16 +215,87 @@ export default async function decorate(block) {
   toggleMenu(nav, navSections, isDesktop.matches);
   isDesktop.addEventListener('change', () => toggleMenu(nav, navSections, isDesktop.matches));
 
-  // cart button + minicart
+  // nav tools: sign in + cart
   const navTools = nav.querySelector('.nav-tools');
   if (navTools) {
+    // --- Sign In / Account button ---
+    const signinBtn = document.createElement('button');
+    signinBtn.className = 'nav-signin';
+    signinBtn.type = 'button';
+    signinBtn.textContent = 'Sign In';
+    navTools.append(signinBtn);
+
+    const logoutBtn = document.createElement('button');
+    logoutBtn.className = 'nav-logout';
+    logoutBtn.type = 'button';
+    logoutBtn.setAttribute('aria-label', 'Logout');
+    navTools.append(logoutBtn);
+
+    let authPanel = null;
+    async function ensureAuthPanel() {
+      if (authPanel) return authPanel;
+      const authMod = await import('./auth-panel.js');
+      authPanel = authMod.default();
+      return authPanel;
+    }
+
+    function updateAuthUI(loggedIn, email) {
+      if (loggedIn && email) {
+        signinBtn.textContent = email.split('@')[0];
+        signinBtn.setAttribute('aria-label', `Account: ${email}`);
+        logoutBtn.style.display = '';
+      } else {
+        signinBtn.textContent = 'Sign In';
+        signinBtn.setAttribute('aria-label', 'Sign In');
+        logoutBtn.style.display = 'none';
+      }
+    }
+
+    signinBtn.addEventListener('click', async () => {
+      const hasToken = !!sessionStorage.getItem('auth_token');
+      if (hasToken) {
+        window.location.href = '/account';
+      } else {
+        const panel = await ensureAuthPanel();
+        panel.showEmailStep();
+        panel.open();
+      }
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      const { commerce } = await import('../../scripts/commerce/api.js');
+      await commerce.logout();
+    });
+
+    document.addEventListener('commerce:auth-state-changed', (e) => {
+      updateAuthUI(e.detail.loggedIn, e.detail.email);
+    });
+
+    document.addEventListener('commerce:open-auth-panel', async () => {
+      const panel = await ensureAuthPanel();
+      panel.showEmailStep();
+      panel.open();
+    });
+
+    // restore auth UI on load
+    try {
+      const userRaw = localStorage.getItem('auth_user');
+      if (userRaw) {
+        const user = JSON.parse(userRaw);
+        const hasToken = !!sessionStorage.getItem('auth_token');
+        if (hasToken && user?.email) {
+          updateAuthUI(true, user.email);
+        }
+      }
+    } catch { /* ignore */ }
+
+    // --- Cart button + minicart ---
     const cartBtn = document.createElement('button');
     cartBtn.className = 'nav-cart-button';
     cartBtn.type = 'button';
     cartBtn.setAttribute('aria-label', 'Cart');
     navTools.append(cartBtn);
 
-    // lazy-init minicart and commerce on first interaction or cart event
     let drawer = null;
     async function ensureMinicart() {
       if (drawer) return drawer;
@@ -234,7 +305,6 @@ export default async function decorate(block) {
       ]);
       drawer = minicartMod.default(nav);
 
-      // sync badge + drawer on every cart update
       commerce.on(commerce.EVENTS.CART_UPDATED, (e) => {
         const { cart } = e.detail;
         if (cart.itemCount > 0) {
@@ -245,11 +315,16 @@ export default async function decorate(block) {
         drawer.refresh(cart);
       });
 
-      // initial state
       const cart = await commerce.getCart();
       if (cart.itemCount > 0) cartBtn.dataset.count = cart.itemCount;
       drawer.refresh(cart);
       return drawer;
+    }
+
+    // Set initial badge from cookie so it shows on every page load
+    const cookieMatch = document.cookie.match(/cart_items_count=(\d+)/);
+    if (cookieMatch && Number(cookieMatch[1]) > 0) {
+      cartBtn.dataset.count = cookieMatch[1];
     }
 
     cartBtn.addEventListener('click', async () => {
@@ -257,9 +332,16 @@ export default async function decorate(block) {
       d.open();
     });
 
-    // eagerly listen for add-to-cart so minicart opens even before user clicks the icon
     document.addEventListener('commerce:cart-updated', async (e) => {
-      if (e.detail?.action === 'add') {
+      const { cart, action } = e.detail || {};
+      // Update badge for all cart events
+      if (cart && cart.itemCount > 0) {
+        cartBtn.dataset.count = cart.itemCount;
+      } else {
+        delete cartBtn.dataset.count;
+      }
+      // Open minicart only on add
+      if (action === 'add') {
         const d = await ensureMinicart();
         d.open();
       }
