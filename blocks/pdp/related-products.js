@@ -105,7 +105,9 @@ export default function renderRelatedProducts(ph, state) {
       observer.disconnect();
 
       const products = await Promise.all(
-        relatedPaths.map((path) => fetchProduct(path).then((data) => (data ? { data, path } : null))),
+        relatedPaths.map((path) => fetchProduct(path).then(
+          (data) => (data ? { data, path } : null),
+        )),
       );
 
       const valid = products.filter(Boolean);

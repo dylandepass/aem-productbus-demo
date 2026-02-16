@@ -67,13 +67,13 @@ export default function decorate(block) {
     goToSlide((current + 1) % slides.length);
   }
 
+  function stopAutoplay() {
+    if (timer) clearInterval(timer);
+  }
+
   function startAutoplay() {
     stopAutoplay();
     timer = setInterval(advance, AUTOPLAY_INTERVAL);
-  }
-
-  function stopAutoplay() {
-    if (timer) clearInterval(timer);
   }
 
   dotButtons.forEach((dot, i) => {

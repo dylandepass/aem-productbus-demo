@@ -152,6 +152,99 @@ function updateSummary(container, cart) {
   if (totalEl) totalEl.textContent = formatPrice(total);
 }
 
+// --- Google Places Autocomplete ---
+
+async function initAddressAutocomplete(section) {
+  try {
+    await loadGoogleMaps(GOOGLE_PLACES_API_KEY);
+  } catch {
+    return; // graceful degradation — form works without it
+  }
+
+  const addressInput = section.querySelector('[autocomplete="address-line1"]');
+  if (!addressInput || !window.google?.maps?.places) return;
+
+  const autocomplete = new window.google.maps.places.Autocomplete(addressInput, {
+    types: ['address'],
+    fields: ['address_components', 'formatted_address'],
+  });
+
+  autocomplete.addListener('place_changed', () => {
+    const place = autocomplete.getPlace();
+    if (!place.address_components) return;
+
+    const components = {};
+    place.address_components.forEach((c) => {
+      c.types.forEach((type) => { components[type] = c; });
+    });
+
+    // Street address
+    const streetNumber = components.street_number?.long_name || '';
+    const route = components.route?.long_name || '';
+    addressInput.value = `${streetNumber} ${route}`.trim();
+
+    // Subpremise → address2
+    const address2Input = section.querySelector('[autocomplete="address-line2"]');
+    if (address2Input && components.subpremise) {
+      address2Input.value = components.subpremise.long_name;
+    }
+
+    // City
+    const cityInput = section.querySelector('[autocomplete="address-level2"]');
+    if (cityInput) {
+      cityInput.value = (components.locality || components.sublocality || components.postal_town)?.long_name || '';
+    }
+
+    // State
+    const stateInput = section.querySelector('[autocomplete="address-level1"]');
+    if (stateInput) {
+      stateInput.value = components.administrative_area_level_1?.short_name || '';
+    }
+
+    // ZIP
+    const zipInput = section.querySelector('[autocomplete="postal-code"]');
+    if (zipInput) {
+      zipInput.value = components.postal_code?.long_name || '';
+    }
+
+    // Country
+    const countrySelect = section.querySelector('[autocomplete="country"]');
+    if (countrySelect && components.country) {
+      const code = components.country.short_name;
+      const option = countrySelect.querySelector(`option[value="${code}"]`);
+      if (option) countrySelect.value = code;
+    }
+
+    // Clear validation errors on auto-filled fields (skip address input to avoid retriggering)
+    section.querySelectorAll('.cart-input').forEach((input) => {
+      if (input.value && input !== addressInput) clearFieldError(input);
+    });
+    clearFieldError(addressInput);
+  });
+}
+
+// --- Order confirmation ---
+
+function showOrderConfirmation(wrapper, order, email) {
+  wrapper.innerHTML = '';
+  wrapper.style.gridTemplateColumns = '1fr';
+
+  const confirmation = document.createElement('div');
+  confirmation.className = 'cart-confirmation';
+
+  const orderId = order?.id || order?.orderId || 'N/A';
+
+  confirmation.innerHTML = `
+    <div class="cart-confirmation-icon">&#10003;</div>
+    <h2>Order confirmed</h2>
+    <p class="cart-confirmation-id">Order #${orderId}</p>
+    <p>We've sent a confirmation to <strong>${email}</strong>.</p>
+    <a href="/" class="cart-continue-shopping">Continue Shopping</a>
+  `;
+
+  wrapper.append(confirmation);
+}
+
 // --- Checkout form ---
 
 function buildCheckoutForm() {
@@ -288,101 +381,6 @@ function buildCheckoutForm() {
   })();
 
   return section;
-}
-
-// --- Google Places Autocomplete ---
-
-async function initAddressAutocomplete(section) {
-  try {
-    await loadGoogleMaps(GOOGLE_PLACES_API_KEY);
-  } catch {
-    return; // graceful degradation — form works without it
-  }
-
-  const addressInput = section.querySelector('[autocomplete="address-line1"]');
-  if (!addressInput || !window.google?.maps?.places) return;
-
-  const autocomplete = new google.maps.places.Autocomplete(addressInput, {
-    types: ['address'],
-    fields: ['address_components', 'formatted_address'],
-  });
-
-  autocomplete.addListener('place_changed', () => {
-    const place = autocomplete.getPlace();
-    if (!place.address_components) return;
-
-    const components = {};
-    place.address_components.forEach((c) => {
-      c.types.forEach((type) => { components[type] = c; });
-    });
-
-    // Street address
-    const streetNumber = components.street_number?.long_name || '';
-    const route = components.route?.long_name || '';
-    addressInput.value = `${streetNumber} ${route}`.trim();
-
-    // Subpremise → address2
-    const address2Input = section.querySelector('[autocomplete="address-line2"]');
-    if (address2Input && components.subpremise) {
-      address2Input.value = components.subpremise.long_name;
-    }
-
-    // City
-    const cityInput = section.querySelector('[autocomplete="address-level2"]');
-    if (cityInput) {
-      cityInput.value = (components.locality || components.sublocality || components.postal_town)?.long_name || '';
-    }
-
-    // State
-    const stateInput = section.querySelector('[autocomplete="address-level1"]');
-    if (stateInput) {
-      stateInput.value = components.administrative_area_level_1?.short_name || '';
-    }
-
-    // ZIP
-    const zipInput = section.querySelector('[autocomplete="postal-code"]');
-    if (zipInput) {
-      zipInput.value = components.postal_code?.long_name || '';
-    }
-
-    // Country
-    const countrySelect = section.querySelector('[autocomplete="country"]');
-    if (countrySelect && components.country) {
-      const code = components.country.short_name;
-      const option = countrySelect.querySelector(`option[value="${code}"]`);
-      if (option) countrySelect.value = code;
-    }
-
-    // Clear validation errors on auto-filled fields (skip address input to avoid retriggering autocomplete)
-    section.querySelectorAll('.cart-input').forEach((input) => {
-      if (input.value && input !== addressInput) {
-        clearFieldError(input);
-      }
-    });
-    clearFieldError(addressInput);
-  });
-}
-
-// --- Order confirmation ---
-
-function showOrderConfirmation(wrapper, order, email) {
-  wrapper.innerHTML = '';
-  wrapper.style.gridTemplateColumns = '1fr';
-
-  const confirmation = document.createElement('div');
-  confirmation.className = 'cart-confirmation';
-
-  const orderId = order?.id || order?.orderId || 'N/A';
-
-  confirmation.innerHTML = `
-    <div class="cart-confirmation-icon">&#10003;</div>
-    <h2>Order confirmed</h2>
-    <p class="cart-confirmation-id">Order #${orderId}</p>
-    <p>We've sent a confirmation to <strong>${email}</strong>.</p>
-    <a href="/" class="cart-continue-shopping">Continue Shopping</a>
-  `;
-
-  wrapper.append(confirmation);
 }
 
 // --- Block entry point ---

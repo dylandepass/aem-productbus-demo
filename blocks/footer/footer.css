@@ -26,8 +26,7 @@
 
 .footer-wrapper .footer .section.redirect-links ul {
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+  flex-flow: row wrap;
   align-items: center;
   margin: 0 auto;
   padding: 0 var(--spacing-m);

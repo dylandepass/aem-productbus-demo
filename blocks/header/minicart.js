@@ -81,10 +81,10 @@ function renderFooter(footer, cart) {
 
 /**
  * Creates and returns the minicart drawer with open/close/refresh methods.
- * @param {Element} parent - Element to append the drawer to (nav or body)
+ * @param {Element} _parent - Element to append the drawer to (nav or body); reserved for future use
  * @returns {{ open: Function, close: Function, refresh: Function }}
  */
-export default function createMinicart(parent) {
+export default function createMinicart(_parent) { // eslint-disable-line no-unused-vars
   // overlay
   const overlay = document.createElement('div');
   overlay.className = 'minicart-overlay';

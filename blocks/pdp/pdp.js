@@ -47,12 +47,13 @@ function parseJsonLd() {
  * @returns {Array<Object>} Array of variant objects
  */
 function parseVariants(sections, jsonLdData) {
-  if (!jsonLdData?.offers) return [];
+  const { offers } = jsonLdData || {};
+  if (!offers) return [];
   return sections.map((div) => {
     const name = div.querySelector('h2')?.textContent.trim();
-    const sku = div.dataset.sku;
+    const { sku } = div.dataset;
     const imagesHTML = div.querySelectorAll('picture');
-    const ldVariant = jsonLdData.offers.find((offer) => offer.sku === sku);
+    const ldVariant = offers.find((offer) => offer.sku === sku);
     const price = getOfferPricing(ldVariant);
     const options = ldVariant?.options || [];
     return {

@@ -132,30 +132,6 @@ export default function createAuthPanel() {
     if (firstInput) setTimeout(() => firstInput.focus(), 100);
   }
 
-  function showEmailStep() {
-    const step = buildEmailStep();
-    step.querySelector('form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = step.querySelector('[name="email"]').value.trim();
-      const btn = step.querySelector('.auth-submit');
-      const errEl = step.querySelector('.auth-error');
-      errEl.textContent = '';
-      btn.disabled = true;
-      btn.textContent = 'Sending code\u2026';
-
-      try {
-        const commerce = await getCommerce();
-        otpState = await commerce.login(email);
-        showCodeStep(email);
-      } catch (err) {
-        errEl.textContent = err.message || 'Failed to send code';
-        btn.disabled = false;
-        btn.textContent = 'Continue';
-      }
-    });
-    showStep(step);
-  }
-
   function showCodeStep(email) {
     const step = buildCodeStep(email);
     step.querySelector('form').addEventListener('submit', async (e) => {
@@ -180,7 +156,34 @@ export default function createAuthPanel() {
       }
     });
 
-    step.querySelector('.auth-back').addEventListener('click', showEmailStep);
+    step.querySelector('.auth-back').addEventListener(
+      'click',
+      showEmailStep, // eslint-disable-line no-use-before-define -- defined below
+    );
+    showStep(step);
+  }
+
+  function showEmailStep() {
+    const step = buildEmailStep();
+    step.querySelector('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = step.querySelector('[name="email"]').value.trim();
+      const btn = step.querySelector('.auth-submit');
+      const errEl = step.querySelector('.auth-error');
+      errEl.textContent = '';
+      btn.disabled = true;
+      btn.textContent = 'Sending code\u2026';
+
+      try {
+        const commerce = await getCommerce();
+        otpState = await commerce.login(email);
+        showCodeStep(email);
+      } catch (err) {
+        errEl.textContent = err.message || 'Failed to send code';
+        btn.disabled = false;
+        btn.textContent = 'Continue';
+      }
+    });
     showStep(step);
   }
 

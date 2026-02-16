@@ -55,6 +55,7 @@ async function loadAdapter() {
  * Every method lazy-loads the adapter on first call. Cart-mutating methods
  * dispatch standardized events after the adapter completes its work.
  */
+/* eslint-disable import/prefer-default-export -- single named export is the public API */
 export const commerce = {
   // --- Cart ---
 
@@ -73,7 +74,9 @@ export const commerce = {
   async updateItemQuantity(sku, quantity) {
     const a = await loadAdapter();
     const cart = await a.updateItemQuantity(sku, quantity);
-    dispatch(EVENTS.CART_UPDATED, { cart, sku, quantity, action: 'update' });
+    dispatch(EVENTS.CART_UPDATED, {
+      cart, sku, quantity, action: 'update',
+    });
     return cart;
   },
 
