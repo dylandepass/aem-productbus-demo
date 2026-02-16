@@ -47,10 +47,11 @@ export function buildThumbnails(carousel) {
 /**
  * Renders the gallery section of the PDP block.
  * @param {Element} block - The PDP block element
- * @param {Array} variants - The product variants
+ * @param {Object} state - The PDP state object
  * @returns {Element} The gallery container element
  */
-export default function renderGallery(block, variants) {
+export default function renderGallery(block, state) {
+  const variants = state.get('variants');
   const gallery = document.createElement('div');
   gallery.className = 'gallery';
   const wrapper = document.createElement('ul');
@@ -89,7 +90,7 @@ export default function renderGallery(block, variants) {
     const fallbackImages = block.querySelectorAll('.img-wrapper');
 
     // store clones for reset functionality
-    window.defaultProductImages = Array.from(fallbackImages).map((img) => img.cloneNode(true));
+    state.set('defaultProductImages', Array.from(fallbackImages).map((img) => img.cloneNode(true)));
 
     // append slides from images
     [...variantImages, ...fallbackImages].forEach((el) => {

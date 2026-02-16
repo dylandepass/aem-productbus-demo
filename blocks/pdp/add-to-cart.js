@@ -3,29 +3,31 @@ import { checkVariantOutOfStock, getOfferPricing } from '../../scripts/scripts.j
 /**
  * Checks if a variant is available for sale.
  * @param {Object} variant - The variant object
+ * @param {Object} jsonLdData - Parsed JSON-LD product data
  * @returns {boolean} True if the variant is available for sale
  */
-export function isVariantAvailableForSale(variant) {
+export function isVariantAvailableForSale(variant, jsonLdData) {
   if (!variant) return false;
-  return !checkVariantOutOfStock(variant.sku);
+  return !checkVariantOutOfStock(variant.sku, jsonLdData);
 }
 
 /**
  * Renders the add to cart section with quantity selector and button.
  * @param {Object} ph - Placeholders object
  * @param {Element} block - The PDP block element
- * @param {Object} parent - Parent product JSON-LD data
+ * @param {Object} state - The PDP state object
  * @returns {HTMLElement} Container with add to cart controls
  */
-export default function renderAddToCart(ph, block, parent) {
-  let selectedVariant = parent.offers?.[0] || parent;
-  if (window.selectedVariant) {
-    const { sku: selectedSku } = window.selectedVariant;
-    const found = parent.offers.find((variant) => variant.sku === selectedSku);
+export default function renderAddToCart(ph, block, state) {
+  const product = state.get('product');
+  let selectedVariant = product.offers?.[0] || product;
+  const currentSelection = state.get('selectedVariant');
+  if (currentSelection) {
+    const found = product.offers.find((variant) => variant.sku === currentSelection.sku);
     if (found) selectedVariant = found;
   }
 
-  const isAvailable = isVariantAvailableForSale(selectedVariant);
+  const isAvailable = isVariantAvailableForSale(selectedVariant, product);
 
   const addToCartContainer = document.createElement('div');
   addToCartContainer.classList.add('add-to-cart');
@@ -66,7 +68,7 @@ export default function renderAddToCart(ph, block, parent) {
     addToCartButton.setAttribute('aria-disabled', 'true');
 
     const quantity = +quantitySelect.value;
-    const variant = selectedVariant || window.selectedVariant;
+    const variant = selectedVariant || state.get('selectedVariant');
     const sku = variant?.sku;
     const pricing = getOfferPricing(variant);
 
@@ -74,7 +76,7 @@ export default function renderAddToCart(ph, block, parent) {
       const { commerce } = await import('../../scripts/commerce/api.js');
       await commerce.addToCart({
         sku,
-        name: window.jsonLdData?.name || '',
+        name: product?.name || '',
         quantity,
         price: pricing?.final || 0,
         image: block.querySelector('.gallery img')?.src || variant?.image?.[0] || '',
