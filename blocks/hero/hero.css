@@ -26,7 +26,7 @@ main > .section.hero-container {
   bottom: var(--spacing-small);
 }
 
-@media (min-width: 320px) {
+@media (width >= 320px) {
   .hero {
       padding-top: 0;
       justify-self: center;
@@ -37,21 +37,21 @@ main > .section.hero-container {
   }
 }
 
-@media (min-width: 768px) {
+@media (width >= 768px) {
   .hero h1 {
       font-size: 31px;
       color: var(--text-color);
   }
 }
 
-@media (min-width: 1024px) {
+@media (width >= 1024px) {
   .hero h1 {
       font-size: 36px;
   }
   
 }
 
-@media (min-width: 1366px) {
+@media (width >= 1366px) {
   .hero h1 {
       font-size: 43px;
   }
@@ -59,7 +59,7 @@ main > .section.hero-container {
 }
 
 
-@media (min-width: 1920px) {
+@media (width >= 1920px) {
   .hero h1 {
       font-size: 48px;
   }

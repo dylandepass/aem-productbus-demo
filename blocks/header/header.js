@@ -232,16 +232,17 @@ export default async function decorate(block) {
     navTools.append(logoutBtn);
 
     let authPanel = null;
-    async function ensureAuthPanel() {
+    const ensureAuthPanel = async () => {
       if (authPanel) return authPanel;
       const authMod = await import('./auth-panel.js');
       authPanel = authMod.default();
       return authPanel;
-    }
+    };
 
-    function updateAuthUI(loggedIn, email) {
+    const updateAuthUI = (loggedIn, email) => {
       if (loggedIn && email) {
-        signinBtn.textContent = email.split('@')[0];
+        const [localPart] = email.split('@');
+        signinBtn.textContent = localPart;
         signinBtn.setAttribute('aria-label', `Account: ${email}`);
         logoutBtn.style.display = '';
       } else {
@@ -249,7 +250,7 @@ export default async function decorate(block) {
         signinBtn.setAttribute('aria-label', 'Sign In');
         logoutBtn.style.display = 'none';
       }
-    }
+    };
 
     signinBtn.addEventListener('click', async () => {
       const hasToken = !!sessionStorage.getItem('auth_token');
@@ -297,7 +298,7 @@ export default async function decorate(block) {
     navTools.append(cartBtn);
 
     let drawer = null;
-    async function ensureMinicart() {
+    const ensureMinicart = async () => {
       if (drawer) return drawer;
       const [minicartMod, { commerce }] = await Promise.all([
         import('./minicart.js'),
@@ -319,12 +320,13 @@ export default async function decorate(block) {
       if (cart.itemCount > 0) cartBtn.dataset.count = cart.itemCount;
       drawer.refresh(cart);
       return drawer;
-    }
+    };
 
     // Set initial badge from cookie so it shows on every page load
     const cookieMatch = document.cookie.match(/cart_items_count=(\d+)/);
-    if (cookieMatch && Number(cookieMatch[1]) > 0) {
-      cartBtn.dataset.count = cookieMatch[1];
+    if (cookieMatch) {
+      const [, count] = cookieMatch;
+      if (Number(count) > 0) cartBtn.dataset.count = count;
     }
 
     cartBtn.addEventListener('click', async () => {

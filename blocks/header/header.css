@@ -1,4 +1,4 @@
-/* stylelint-disable selector-class-pattern */
+/* stylelint-disable selector-class-pattern, no-descending-specificity */
 
 /* header and nav layout */
 header .nav-wrapper {
@@ -11,7 +11,7 @@ header .nav-wrapper {
 }
 
 header .nav-wrapper.shadow {
-  box-shadow: rgba(184, 184, 184, 0.3) 0px 10px 40px 5px;
+  box-shadow: rgb(184 184 184 / 30%) 0 10px 40px 5px;
 }
 
 html:has(.anchoring-header) header .nav-wrapper {
@@ -34,8 +34,27 @@ header nav {
     font-family: var(--body-font-family);
 }
 
+/* sections: base first, then expanded state */
+header nav .nav-sections {
+    grid-area: sections;
+    flex: 1 1 auto;
+    margin: 0;
+    overflow-y: scroll;
+    position: relative;
+    height: 100dvh;
+    transform: translateX(-100%);
+}
+
 header nav[aria-expanded='true'] .nav-sections {
     overflow-y: auto;
+    width: 100vw;
+    z-index: 2;
+    position: fixed;
+    top: 0;
+    left: 0;
+    transform: none;
+    background-color: rgb(0 0 0 / 70%);
+    align-self: start;
 }
 
 @media (width > 990px) {
@@ -66,7 +85,7 @@ header nav .nav-hamburger {
     border: none;
     background: var(--background-color);
     padding: 5px 7px;
-    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.15);
+    box-shadow: 0 0 10px 0 rgb(0 0 0 / 15%);
 }
 
 header nav .nav-hamburger button {
@@ -75,7 +94,6 @@ header nav .nav-hamburger button {
     border: 0;
     border-radius: 0;
     padding: 0;
-
     background-color: transparent;
     color: var(--text-color);
     overflow: initial;
@@ -90,6 +108,9 @@ header nav .nav-hamburger-icon::after {
     display: block;
     position: relative;
     width: 24px;
+    height: 2px;
+    border-radius: 2px;
+    background: grey;
 }
 
 header nav .nav-hamburger-icon::before,
@@ -97,14 +118,6 @@ header nav .nav-hamburger-icon::after {
     content: '';
     position: absolute;
     background: currentcolor;
-}
-
-header nav .nav-hamburger-icon,
-header nav .nav-hamburger-icon::before,
-header nav .nav-hamburger-icon::after {
-    height: 2px;
-    border-radius: 2px;
-    background: grey;
 }
 
 header nav .nav-hamburger-icon::before {
@@ -144,17 +157,6 @@ header nav .nav-brand img {
     max-width: 120px;
 }
 
-/* sections */
-header nav .nav-sections {
-    grid-area: sections;
-    flex: 1 1 auto;
-    margin: 0;
-    overflow-y: scroll;
-    position: relative;
-    height: 100dvh;
-    transform: translateX(-100%);
-}
-
 header nav .nav-sections .nav-sections-ul-wrapper {
     background-color: var(--text-color-inverse);
     position: absolute;
@@ -189,24 +191,12 @@ header nav .nav-sections .nav-sections-ul-wrapper[data-authenticated="true"]::be
       background-image: url('../../icons/user.png'); /* or .png/.jpg */
     background-size: 24px 24px;
     background-position: 14px center;
-    
   background-repeat: no-repeat;
     vertical-align: middle;
 }
 
-header nav[aria-expanded='true'] .nav-sections {
-    width: 100vw;
-    z-index: 2;
-    position: fixed;
-    top: 0;
-    left: 0;
-    transform: none;
-    background-color: rgb(0 0 0 / 70%);
-    align-self: start;
-}
-
 header nav[aria-expanded='true'] .nav-sections .nav-sections-ul-wrapper {
-    transform: translateX(0vw);
+    transform: translateX(0);
 }
 
 header nav .nav-sections .nav-sections-ul-wrapper > ul {
@@ -254,7 +244,7 @@ header
     position: absolute;
     right: 0;
     top: 0;
-    bottom: 0px;
+    bottom: 0;
     width: 50px;
     height: 50px;
     cursor: pointer;
@@ -274,10 +264,7 @@ header
     background: grey;
     width: 2px;
     height: 16px;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
+    inset: 0;
     margin: auto;
 }
 
@@ -295,10 +282,7 @@ header
     background: grey;
     width: 16px;
     height: 2px;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
+    inset: 0;
     margin: auto;
 }
 
@@ -599,7 +583,7 @@ header .nav-search-panel input {
     border-color: var(--light-color);
     background: var(--border-color);
     font-weight: 400;
-    color: rgb(33, 37, 41);
+    color: rgb(33 37 41);
     height: 50px;
 }
 
@@ -1102,10 +1086,11 @@ header .nav-search-input .search_autocomplete .popover-container {
     width: 100%;
 }
 
-@media (min-width: 576px) {
+@media (width >= 576px) {
     header nav .nav-hamburger button {
         height: 32px;
     }
+
     header nav .nav-hamburger-icon,
     header nav .nav-hamburger-icon::before,
     header nav .nav-hamburger-icon::after {
@@ -1131,14 +1116,15 @@ header .nav-search-input .search_autocomplete .popover-container {
         width: 398px;
     }
 }
-@media (min-width: 768px) {
+
+@media (width >= 768px) {
     header nav {
         gap: 0 var(--spacing-m);
     }
 
 }
 
-@media (min-width: 991px) {
+@media (width >= 991px) {
     header .nav-wrapper {
         background-color: var(--text-color-inverse);
     }
@@ -1190,6 +1176,7 @@ header .nav-search-input .search_autocomplete .popover-container {
         margin: 0;
         position: static;
     }
+
     header nav .nav-sections ul > li a {
         text-decoration: none;
         white-space: nowrap;
@@ -1199,13 +1186,14 @@ header .nav-search-input .search_autocomplete .popover-container {
         color: var(--text-color);
         font-weight: 100;
         text-align: left;
-        border-bottom: 0px;
+        border-bottom: 0;
     }
 
     header nav .nav-sections ul li {
         display: flex;
         align-items: center;
     }
+
     header nav .nav-sections .nav-drop ul li {
         margin: 0;
     }
@@ -1225,6 +1213,8 @@ header .nav-search-input .search_autocomplete .popover-container {
     header nav .nav-sections .nav-sections-ul-wrapper > ul > li > a {
         border-bottom: none;
         height: 100%;
+        padding-left: 1.4rem;
+        padding-right: 1.34rem;
     }
 
     header
@@ -1311,11 +1301,6 @@ header .nav-search-input .search_autocomplete .popover-container {
         display: none;
     }
 
-    header nav .nav-sections .nav-sections-ul-wrapper > ul > li > a {
-        padding-left: 1.4rem;
-        padding-right: 1.34rem;
-    }
-
     /* fallback for nav items that remain as <p> */
     header nav .nav-sections .nav-sections-ul-wrapper > ul > li > p {
         margin: 0;
@@ -1336,13 +1321,13 @@ header .nav-search-input .search_autocomplete .popover-container {
     }
 }
 
-@media (min-width: 1024px) {
+@media (width >= 1024px) {
     .nav-signin {
         font-size: 17px;
     }
 }
 
-@media (min-width: 1920px) {
+@media (width >= 1920px) {
     .nav-signin {
         font-size: 18px;
     }

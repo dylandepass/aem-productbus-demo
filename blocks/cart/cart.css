@@ -135,13 +135,12 @@
   color: var(--text-color);
   background: transparent;
   padding: 0;
-  -moz-appearance: textfield;
   appearance: textfield;
 }
 
 .cart-qty-input::-webkit-inner-spin-button,
 .cart-qty-input::-webkit-outer-spin-button {
-  -webkit-appearance: none;
+  appearance: none;
   margin: 0;
 }
 

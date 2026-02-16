@@ -16,6 +16,44 @@ function getOptionValue(variant, optionId) {
 }
 
 /**
+ * Determines if an option type represents a size.
+ * @param {string} optionId - The option ID
+ * @returns {boolean}
+ */
+function isSizeOption(optionId) {
+  return optionId.toLowerCase() === 'size';
+}
+
+/**
+ * Returns a numeric sort rank for a size value (smallest first).
+ * @param {string} value - The size value
+ * @returns {number} Sort rank
+ */
+function sizeOrder(value) {
+  const order = [
+    'x-small', 'extra-small', 'extra small', 'xs',
+    'small', 's',
+    'medium', 'm',
+    'large', 'l',
+    'x-large', 'extra-large', 'extra large', 'xl',
+    'xx-large', '2x-large', 'xxl',
+    'xxx-large', '3x-large', 'xxxl',
+  ];
+  const idx = order.indexOf(value.toLowerCase());
+  return idx >= 0 ? idx : order.length;
+}
+
+/**
+ * Formats an option value for display in the label.
+ * @param {string} optionId - The option ID
+ * @param {string} value - The raw option value
+ * @returns {string} The display value
+ */
+function formatOptionLabel(optionId, value) {
+  return value;
+}
+
+/**
  * Extracts distinct option types and their unique values from all variants.
  * @param {Array} variants - All product variants
  * @returns {Array<{id: string, values: string[]}>} Option types with unique values
@@ -263,44 +301,6 @@ function abbreviateSize(value) {
     '3x-large': 'XXXL',
   };
   return sizeMap[value.toLowerCase()] || value;
-}
-
-/**
- * Determines if an option type represents a size.
- * @param {string} optionId - The option ID
- * @returns {boolean}
- */
-function isSizeOption(optionId) {
-  return optionId.toLowerCase() === 'size';
-}
-
-/**
- * Returns a numeric sort rank for a size value (smallest first).
- * @param {string} value - The size value
- * @returns {number} Sort rank
- */
-function sizeOrder(value) {
-  const order = [
-    'x-small', 'extra-small', 'extra small', 'xs',
-    'small', 's',
-    'medium', 'm',
-    'large', 'l',
-    'x-large', 'extra-large', 'extra large', 'xl',
-    'xx-large', '2x-large', 'xxl',
-    'xxx-large', '3x-large', 'xxxl',
-  ];
-  const idx = order.indexOf(value.toLowerCase());
-  return idx >= 0 ? idx : order.length;
-}
-
-/**
- * Formats an option value for display in the label.
- * @param {string} optionId - The option ID
- * @param {string} value - The raw option value
- * @returns {string} The display value
- */
-function formatOptionLabel(optionId, value) {
-  return value;
 }
 
 /**

@@ -138,142 +138,6 @@ function updateSummary(container, cart) {
   if (totalEl) totalEl.textContent = formatPrice(total);
 }
 
-// --- Checkout form ---
-
-function buildCheckoutForm() {
-  const section = document.createElement('div');
-  section.className = 'cart-checkout-section';
-
-  section.innerHTML = `
-    <div class="cart-contact">
-      <h3>Contact</h3>
-      <input type="email" class="cart-input" name="email" placeholder="Email address" autocomplete="email" required>
-      <label class="cart-create-account-label">
-        <input type="checkbox" class="cart-create-account-check">
-        <span>Create an account</span>
-      </label>
-    </div>
-
-    <div class="cart-shipping">
-      <h3>Shipping address</h3>
-      <div class="cart-form-row">
-        <input type="text" class="cart-input" name="firstName" placeholder="First name" autocomplete="given-name" required minlength="2">
-        <input type="text" class="cart-input" name="lastName" placeholder="Last name" autocomplete="family-name" required minlength="2">
-      </div>
-      <input type="text" class="cart-input" name="address1" placeholder="Address" autocomplete="address-line1" required>
-      <input type="text" class="cart-input" name="address2" placeholder="Apartment, suite, etc. (optional)" autocomplete="address-line2">
-      <div class="cart-form-row">
-        <input type="text" class="cart-input" name="city" placeholder="City" autocomplete="address-level2" required>
-        <input type="text" class="cart-input" name="state" placeholder="State / Province" autocomplete="address-level1" required>
-      </div>
-      <div class="cart-form-row">
-        <input type="text" class="cart-input" name="zip" placeholder="ZIP / Postal code" autocomplete="postal-code" required pattern="[0-9a-zA-Z\\x20\\x2d]{3,10}" title="Enter a valid postal code">
-        <select class="cart-input" name="country" autocomplete="country" required>
-          <option value="">Country</option>
-          <option value="US" selected>United States</option>
-          <option value="CA">Canada</option>
-          <option value="GB">United Kingdom</option>
-          <option value="AU">Australia</option>
-          <option value="DE">Germany</option>
-          <option value="FR">France</option>
-          <option value="JP">Japan</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="cart-summary">
-      <h3>Order summary</h3>
-      <div class="cart-summary-row">
-        <span>Subtotal</span>
-        <span class="cart-summary-subtotal">$0.00</span>
-      </div>
-      <div class="cart-summary-row">
-        <span>Shipping</span>
-        <span class="cart-summary-shipping">Free</span>
-      </div>
-      <div class="cart-summary-row cart-summary-total">
-        <span>Total</span>
-        <span class="cart-summary-total-value">$0.00</span>
-      </div>
-      <button class="cart-checkout-btn" type="button">Place Order</button>
-      <p class="cart-checkout-note"></p>
-    </div>
-  `;
-
-  // place order
-  const placeBtn = section.querySelector('.cart-checkout-btn');
-  placeBtn.addEventListener('click', async () => {
-    if (!validateForm(section)) return;
-
-    const email = section.querySelector('[name="email"]').value.trim();
-    const firstName = section.querySelector('[name="firstName"]').value.trim();
-    const lastName = section.querySelector('[name="lastName"]').value.trim();
-    const address = section.querySelector('[name="address1"]').value.trim();
-    const address2 = section.querySelector('[name="address2"]').value.trim();
-    const city = section.querySelector('[name="city"]').value.trim();
-    const state = section.querySelector('[name="state"]').value.trim();
-    const zip = section.querySelector('[name="zip"]').value.trim();
-    const country = section.querySelector('[name="country"]').value;
-
-    placeBtn.disabled = true;
-    placeBtn.textContent = 'Placing order…';
-
-    try {
-      const order = await commerce.createOrder({
-        customer: { email, firstName, lastName },
-        shipping: {
-          name: `${firstName} ${lastName}`,
-          email,
-          address1: address,
-          address2,
-          city,
-          state,
-          zip,
-          country,
-        },
-      });
-
-      await commerce.clearCart();
-      showOrderConfirmation(section.closest('.cart-layout'), order, email);
-    } catch (err) {
-      placeBtn.disabled = false;
-      placeBtn.textContent = 'Place Order';
-      const note = section.querySelector('.cart-checkout-note');
-      note.textContent = `Order failed: ${err.message}`;
-      note.classList.add('cart-checkout-error');
-    }
-  });
-
-  // --- Address Autocomplete (via worker proxy) ---
-  initAddressAutocomplete(section);
-
-  // --- Auto-fill from logged-in customer profile ---
-  (async () => {
-    try {
-      if (await commerce.isLoggedIn()) {
-        // Try full profile first, fall back to session user info (email)
-        const customer = await commerce.getCustomerProfile();
-        const user = await commerce.getCustomer();
-        const fields = {
-          email: customer?.email || user?.email,
-          firstName: customer?.firstName,
-          lastName: customer?.lastName,
-        };
-        Object.entries(fields).forEach(([name, value]) => {
-          if (!value) return;
-          const input = section.querySelector(`[name="${name}"]`);
-          if (input && !input.value) {
-            input.value = value;
-            clearFieldError(input);
-          }
-        });
-      }
-    } catch { /* silent — form works without pre-fill */ }
-  })();
-
-  return section;
-}
-
 // --- Address Autocomplete (via worker proxy) ---
 
 function fillAddressFields(section, addressInput, result) {
@@ -424,6 +288,142 @@ function showOrderConfirmation(wrapper, order, email) {
   `;
 
   wrapper.append(confirmation);
+}
+
+// --- Checkout form ---
+
+function buildCheckoutForm() {
+  const section = document.createElement('div');
+  section.className = 'cart-checkout-section';
+
+  section.innerHTML = `
+    <div class="cart-contact">
+      <h3>Contact</h3>
+      <input type="email" class="cart-input" name="email" placeholder="Email address" autocomplete="email" required>
+      <label class="cart-create-account-label">
+        <input type="checkbox" class="cart-create-account-check">
+        <span>Create an account</span>
+      </label>
+    </div>
+
+    <div class="cart-shipping">
+      <h3>Shipping address</h3>
+      <div class="cart-form-row">
+        <input type="text" class="cart-input" name="firstName" placeholder="First name" autocomplete="given-name" required minlength="2">
+        <input type="text" class="cart-input" name="lastName" placeholder="Last name" autocomplete="family-name" required minlength="2">
+      </div>
+      <input type="text" class="cart-input" name="address1" placeholder="Address" autocomplete="address-line1" required>
+      <input type="text" class="cart-input" name="address2" placeholder="Apartment, suite, etc. (optional)" autocomplete="address-line2">
+      <div class="cart-form-row">
+        <input type="text" class="cart-input" name="city" placeholder="City" autocomplete="address-level2" required>
+        <input type="text" class="cart-input" name="state" placeholder="State / Province" autocomplete="address-level1" required>
+      </div>
+      <div class="cart-form-row">
+        <input type="text" class="cart-input" name="zip" placeholder="ZIP / Postal code" autocomplete="postal-code" required pattern="[0-9a-zA-Z\\x20\\x2d]{3,10}" title="Enter a valid postal code">
+        <select class="cart-input" name="country" autocomplete="country" required>
+          <option value="">Country</option>
+          <option value="US" selected>United States</option>
+          <option value="CA">Canada</option>
+          <option value="GB">United Kingdom</option>
+          <option value="AU">Australia</option>
+          <option value="DE">Germany</option>
+          <option value="FR">France</option>
+          <option value="JP">Japan</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="cart-summary">
+      <h3>Order summary</h3>
+      <div class="cart-summary-row">
+        <span>Subtotal</span>
+        <span class="cart-summary-subtotal">$0.00</span>
+      </div>
+      <div class="cart-summary-row">
+        <span>Shipping</span>
+        <span class="cart-summary-shipping">Free</span>
+      </div>
+      <div class="cart-summary-row cart-summary-total">
+        <span>Total</span>
+        <span class="cart-summary-total-value">$0.00</span>
+      </div>
+      <button class="cart-checkout-btn" type="button">Place Order</button>
+      <p class="cart-checkout-note"></p>
+    </div>
+  `;
+
+  // place order
+  const placeBtn = section.querySelector('.cart-checkout-btn');
+  placeBtn.addEventListener('click', async () => {
+    if (!validateForm(section)) return;
+
+    const email = section.querySelector('[name="email"]').value.trim();
+    const firstName = section.querySelector('[name="firstName"]').value.trim();
+    const lastName = section.querySelector('[name="lastName"]').value.trim();
+    const address = section.querySelector('[name="address1"]').value.trim();
+    const address2 = section.querySelector('[name="address2"]').value.trim();
+    const city = section.querySelector('[name="city"]').value.trim();
+    const state = section.querySelector('[name="state"]').value.trim();
+    const zip = section.querySelector('[name="zip"]').value.trim();
+    const country = section.querySelector('[name="country"]').value;
+
+    placeBtn.disabled = true;
+    placeBtn.textContent = 'Placing order…';
+
+    try {
+      const order = await commerce.createOrder({
+        customer: { email, firstName, lastName },
+        shipping: {
+          name: `${firstName} ${lastName}`,
+          email,
+          address1: address,
+          address2,
+          city,
+          state,
+          zip,
+          country,
+        },
+      });
+
+      await commerce.clearCart();
+      showOrderConfirmation(section.closest('.cart-layout'), order, email);
+    } catch (err) {
+      placeBtn.disabled = false;
+      placeBtn.textContent = 'Place Order';
+      const note = section.querySelector('.cart-checkout-note');
+      note.textContent = `Order failed: ${err.message}`;
+      note.classList.add('cart-checkout-error');
+    }
+  });
+
+  // --- Address Autocomplete (via worker proxy) ---
+  initAddressAutocomplete(section);
+
+  // --- Auto-fill from logged-in customer profile ---
+  (async () => {
+    try {
+      if (await commerce.isLoggedIn()) {
+        // Try full profile first, fall back to session user info (email)
+        const customer = await commerce.getCustomerProfile();
+        const user = await commerce.getCustomer();
+        const fields = {
+          email: customer?.email || user?.email,
+          firstName: customer?.firstName,
+          lastName: customer?.lastName,
+        };
+        Object.entries(fields).forEach(([name, value]) => {
+          if (!value) return;
+          const input = section.querySelector(`[name="${name}"]`);
+          if (input && !input.value) {
+            input.value = value;
+            clearFieldError(input);
+          }
+        });
+      }
+    } catch { /* silent — form works without pre-fill */ }
+  })();
+
+  return section;
 }
 
 // --- Block entry point ---
