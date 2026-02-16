@@ -5,24 +5,10 @@
 
 import { commerce } from '../../scripts/commerce/api.js';
 
-const GOOGLE_PLACES_API_KEY = 'AIzaSyBl0JwukVbRGqZCs9Tyk0my2m5NCY-AsWM';
+const PLACES_API = 'https://aem-productbus-demo-worker.adobeaem.workers.dev/places';
 
 function formatPrice(value) {
   return `$${Number(value).toFixed(2)}`;
-}
-
-// --- Google Maps loader ---
-
-function loadGoogleMaps(apiKey) {
-  return new Promise((resolve, reject) => {
-    if (window.google?.maps?.places) { resolve(); return; }
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
-    script.async = true;
-    script.onload = resolve;
-    script.onerror = reject;
-    document.head.appendChild(script);
-  });
 }
 
 // --- Form validation ---
@@ -152,6 +138,158 @@ function updateSummary(container, cart) {
   if (totalEl) totalEl.textContent = formatPrice(total);
 }
 
+// --- Address Autocomplete (via worker proxy) ---
+
+function fillAddressFields(section, addressInput, result) {
+  const components = {};
+  result.address_components.forEach((c) => {
+    c.types.forEach((type) => { components[type] = c; });
+  });
+
+  // Street address
+  const streetNumber = components.street_number?.long_name || '';
+  const route = components.route?.long_name || '';
+  addressInput.value = `${streetNumber} ${route}`.trim();
+
+  // Subpremise → address2
+  const address2Input = section.querySelector('[autocomplete="address-line2"]');
+  if (address2Input && components.subpremise) {
+    address2Input.value = components.subpremise.long_name;
+  }
+
+  // City
+  const cityInput = section.querySelector('[autocomplete="address-level2"]');
+  if (cityInput) {
+    cityInput.value = (components.locality || components.sublocality || components.postal_town)?.long_name || '';
+  }
+
+  // State
+  const stateInput = section.querySelector('[autocomplete="address-level1"]');
+  if (stateInput) {
+    stateInput.value = components.administrative_area_level_1?.short_name || '';
+  }
+
+  // ZIP
+  const zipInput = section.querySelector('[autocomplete="postal-code"]');
+  if (zipInput) {
+    zipInput.value = components.postal_code?.long_name || '';
+  }
+
+  // Country
+  const countrySelect = section.querySelector('[autocomplete="country"]');
+  if (countrySelect && components.country) {
+    const code = components.country.short_name;
+    const option = countrySelect.querySelector(`option[value="${code}"]`);
+    if (option) countrySelect.value = code;
+  }
+
+  // Clear validation errors on auto-filled fields
+  section.querySelectorAll('.cart-input').forEach((input) => {
+    if (input.value && input !== addressInput) {
+      clearFieldError(input);
+    }
+  });
+  clearFieldError(addressInput);
+}
+
+function initAddressAutocomplete(section) {
+  const addressInput = section.querySelector('[autocomplete="address-line1"]');
+  if (!addressInput) return;
+
+  // Wrap input in a relative container for dropdown positioning
+  const wrapper = document.createElement('div');
+  wrapper.classList.add('places-autocomplete-wrapper');
+  addressInput.parentElement.insertBefore(wrapper, addressInput);
+  wrapper.append(addressInput);
+
+  // Disable browser autocomplete to avoid duplicate popups
+  addressInput.setAttribute('autocomplete', 'off');
+
+  const sessiontoken = crypto.randomUUID();
+  let debounceTimer;
+  let dropdown;
+
+  function removeDropdown() {
+    if (dropdown) { dropdown.remove(); dropdown = null; }
+  }
+
+  function showDropdown(predictions) {
+    removeDropdown();
+    if (!predictions.length) return;
+
+    dropdown = document.createElement('ul');
+    dropdown.classList.add('places-autocomplete-dropdown');
+
+    predictions.forEach((p) => {
+      const li = document.createElement('li');
+      li.textContent = p.description;
+      li.addEventListener('mousedown', async (e) => {
+        e.preventDefault();
+        addressInput.value = p.description;
+        removeDropdown();
+
+        try {
+          const params = new URLSearchParams({
+            place_id: p.place_id,
+            sessiontoken,
+          });
+          const resp = await fetch(`${PLACES_API}/details?${params}`);
+          if (!resp.ok) return;
+          const data = await resp.json();
+          if (data.result?.address_components) {
+            fillAddressFields(section, addressInput, data.result);
+          }
+        } catch { /* silent */ }
+      });
+      dropdown.append(li);
+    });
+
+    wrapper.append(dropdown);
+  }
+
+  addressInput.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    const { value } = addressInput;
+    if (value.length < 3) { removeDropdown(); return; }
+
+    debounceTimer = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({ input: value, sessiontoken });
+        const resp = await fetch(`${PLACES_API}/autocomplete?${params}`);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        showDropdown(data.predictions || []);
+      } catch { /* silent */ }
+    }, 300);
+  });
+
+  addressInput.addEventListener('blur', () => {
+    setTimeout(removeDropdown, 200);
+  });
+}
+
+// --- Order confirmation ---
+
+function showOrderConfirmation(wrapper, order, email) {
+  wrapper.innerHTML = '';
+  wrapper.style.gridTemplateColumns = '1fr';
+
+  const confirmation = document.createElement('div');
+  confirmation.className = 'cart-confirmation';
+
+  const orderId = order?.id || order?.orderId || 'N/A';
+
+  confirmation.innerHTML = `
+    <div class="cart-confirmation-icon">&#10003;</div>
+    <h2>Order confirmed</h2>
+    <p class="cart-confirmation-id">Order #${orderId}</p>
+    <p>We've sent a confirmation to <strong>${email}</strong>.</p>
+    <a href="/" class="cart-continue-shopping">Continue Shopping</a>
+  `;
+
+  wrapper.append(confirmation);
+}
+
 // --- Checkout form ---
 
 function buildCheckoutForm() {
@@ -258,10 +396,8 @@ function buildCheckoutForm() {
     }
   });
 
-  // --- Google Places Autocomplete ---
-  if (GOOGLE_PLACES_API_KEY) {
-    initAddressAutocomplete(section);
-  }
+  // --- Address Autocomplete (via worker proxy) ---
+  initAddressAutocomplete(section);
 
   // --- Auto-fill from logged-in customer profile ---
   (async () => {
@@ -288,101 +424,6 @@ function buildCheckoutForm() {
   })();
 
   return section;
-}
-
-// --- Google Places Autocomplete ---
-
-async function initAddressAutocomplete(section) {
-  try {
-    await loadGoogleMaps(GOOGLE_PLACES_API_KEY);
-  } catch {
-    return; // graceful degradation — form works without it
-  }
-
-  const addressInput = section.querySelector('[autocomplete="address-line1"]');
-  if (!addressInput || !window.google?.maps?.places) return;
-
-  const autocomplete = new google.maps.places.Autocomplete(addressInput, {
-    types: ['address'],
-    fields: ['address_components', 'formatted_address'],
-  });
-
-  autocomplete.addListener('place_changed', () => {
-    const place = autocomplete.getPlace();
-    if (!place.address_components) return;
-
-    const components = {};
-    place.address_components.forEach((c) => {
-      c.types.forEach((type) => { components[type] = c; });
-    });
-
-    // Street address
-    const streetNumber = components.street_number?.long_name || '';
-    const route = components.route?.long_name || '';
-    addressInput.value = `${streetNumber} ${route}`.trim();
-
-    // Subpremise → address2
-    const address2Input = section.querySelector('[autocomplete="address-line2"]');
-    if (address2Input && components.subpremise) {
-      address2Input.value = components.subpremise.long_name;
-    }
-
-    // City
-    const cityInput = section.querySelector('[autocomplete="address-level2"]');
-    if (cityInput) {
-      cityInput.value = (components.locality || components.sublocality || components.postal_town)?.long_name || '';
-    }
-
-    // State
-    const stateInput = section.querySelector('[autocomplete="address-level1"]');
-    if (stateInput) {
-      stateInput.value = components.administrative_area_level_1?.short_name || '';
-    }
-
-    // ZIP
-    const zipInput = section.querySelector('[autocomplete="postal-code"]');
-    if (zipInput) {
-      zipInput.value = components.postal_code?.long_name || '';
-    }
-
-    // Country
-    const countrySelect = section.querySelector('[autocomplete="country"]');
-    if (countrySelect && components.country) {
-      const code = components.country.short_name;
-      const option = countrySelect.querySelector(`option[value="${code}"]`);
-      if (option) countrySelect.value = code;
-    }
-
-    // Clear validation errors on auto-filled fields (skip address input to avoid retriggering autocomplete)
-    section.querySelectorAll('.cart-input').forEach((input) => {
-      if (input.value && input !== addressInput) {
-        clearFieldError(input);
-      }
-    });
-    clearFieldError(addressInput);
-  });
-}
-
-// --- Order confirmation ---
-
-function showOrderConfirmation(wrapper, order, email) {
-  wrapper.innerHTML = '';
-  wrapper.style.gridTemplateColumns = '1fr';
-
-  const confirmation = document.createElement('div');
-  confirmation.className = 'cart-confirmation';
-
-  const orderId = order?.id || order?.orderId || 'N/A';
-
-  confirmation.innerHTML = `
-    <div class="cart-confirmation-icon">&#10003;</div>
-    <h2>Order confirmed</h2>
-    <p class="cart-confirmation-id">Order #${orderId}</p>
-    <p>We've sent a confirmation to <strong>${email}</strong>.</p>
-    <a href="/" class="cart-continue-shopping">Continue Shopping</a>
-  `;
-
-  wrapper.append(confirmation);
 }
 
 // --- Block entry point ---

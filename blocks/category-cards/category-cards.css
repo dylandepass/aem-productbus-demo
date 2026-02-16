@@ -4,7 +4,7 @@
   gap: var(--spacing-m);
 }
 
-@media (min-width: 768px) {
+@media (width >= 768px) {
   .category-cards .category-cards-grid {
     grid-template-columns: repeat(2, 1fr);
   }

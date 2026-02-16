@@ -251,7 +251,7 @@
   background-color: var(--background-color);
 }
 
-.pdp-size-swatch:hover:not(.selected):not(.pdp-size-swatch-oos) {
+.pdp-size-swatch:hover:not(.selected, .pdp-size-swatch-oos) {
   border-color: var(--border-color-strong);
 }
 

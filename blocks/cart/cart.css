@@ -135,13 +135,12 @@
   color: var(--text-color);
   background: transparent;
   padding: 0;
-  -moz-appearance: textfield;
   appearance: textfield;
 }
 
 .cart-qty-input::-webkit-inner-spin-button,
 .cart-qty-input::-webkit-outer-spin-button {
-  -webkit-appearance: none;
+  appearance: none;
   margin: 0;
 }
 
@@ -358,32 +357,38 @@ select.cart-input {
   margin-top: 2px;
 }
 
-/* Google Places autocomplete dropdown */
-.pac-container {
+/* Places autocomplete */
+.places-autocomplete-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.places-autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
   z-index: 10000;
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
   font-family: var(--body-font-family);
+  background: var(--background-color);
   border-radius: var(--radius-s);
   border: 1px solid var(--border-color);
   box-shadow: 0 4px 12px rgb(0 0 0 / 10%);
-  margin-top: 4px;
+  max-height: 240px;
+  overflow-y: auto;
 }
 
-.pac-item {
-  padding: 8px 12px;
+.places-autocomplete-dropdown li {
+  padding: 10px 12px;
   font-size: 0.875rem;
   cursor: pointer;
 }
 
-.pac-item:hover {
+.places-autocomplete-dropdown li:hover {
   background: var(--light-color);
-}
-
-.pac-icon {
-  display: none;
-}
-
-.pac-item-query {
-  font-weight: 500;
 }
 
 /* disabled button */

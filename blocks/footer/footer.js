@@ -51,6 +51,7 @@ export default async function decorate(block) {
       // Ensure all links have discernible text
       const linkText = a.textContent.trim();
       if (!linkText) {
+        // eslint-disable-next-line no-console -- accessibility warning for authors
         console.warn('Footer link missing text content:', a.href);
       }
 

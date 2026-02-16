@@ -78,10 +78,11 @@ function buildProductCard(product, path, ph) {
  * Creates the related products section with lazy loading via IntersectionObserver.
  * Uses the shared carousel for horizontal scrolling with nav arrows.
  * @param {Object} ph - Placeholders for price formatting and labels
+ * @param {Object} state - The PDP state object
  * @returns {HTMLElement} The related products container (content loads when visible)
  */
-export default function renderRelatedProducts(ph) {
-  const relatedPaths = window.jsonLdData?.custom?.related;
+export default function renderRelatedProducts(ph, state) {
+  const relatedPaths = state.get('product')?.custom?.related;
 
   const container = document.createElement('div');
   container.classList.add('related-products');
@@ -104,7 +105,9 @@ export default function renderRelatedProducts(ph) {
       observer.disconnect();
 
       const products = await Promise.all(
-        relatedPaths.map((path) => fetchProduct(path).then((data) => (data ? { data, path } : null))),
+        relatedPaths.map((path) => fetchProduct(path).then(
+          (data) => (data ? { data, path } : null),
+        )),
       );
 
       const valid = products.filter(Boolean);
