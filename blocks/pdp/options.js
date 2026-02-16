@@ -1,8 +1,5 @@
-import { buildSlide, buildThumbnails } from './gallery.js';
-import { rebuildIndices, checkVariantOutOfStock } from '../../scripts/scripts.js';
+import { checkVariantOutOfStock } from '../../scripts/scripts.js';
 import { toClassName } from '../../scripts/aem.js';
-import renderPricing from './pricing.js';
-import renderAddToCart from './add-to-cart.js';
 
 /**
  * Gets the value of a specific option from a variant's options array.
@@ -177,12 +174,6 @@ export function onOptionChange(ph, block, state, optionId, value, isParentOutOfS
   const oosMessage = block.querySelector('.pdp-oos-message');
   updateOOSMessage(ph, oosMessage, isParentOutOfStock);
 
-  // Update pricing
-  const pricingContainer = renderPricing(ph, block, state, variant);
-  if (pricingContainer) {
-    block.querySelector('.pricing').replaceWith(pricingContainer);
-  }
-
   // Update all option labels and selection states
   optionTypes.forEach((type) => {
     const label = block.querySelector(`.selected-option-label[data-option-id="${type.id}"]`);
@@ -205,56 +196,8 @@ export function onOptionChange(ph, block, state, optionId, value, isParentOutOfS
     }
   });
 
-  // Update gallery images
-  let variantImages = variant.images || [];
-  variantImages = [...variantImages].map((v, i) => {
-    const clone = v.cloneNode(true);
-    clone.dataset.source = i ? 'variant' : 'lcp';
-    return clone;
-  });
-
-  const gallery = block.querySelector('.gallery');
-  const slides = gallery.querySelector('ul');
-  const nav = gallery.querySelector('[role="radiogroup"]');
-
-  // update LCP image(s)
-  const lcpSlide = slides.querySelector('[data-source="lcp"]');
-  const lcpButton = nav.querySelector('[data-source="lcp"]');
-  if (lcpSlide && lcpButton) {
-    const oldPic = lcpSlide.querySelector('picture');
-    const { offsetHeight, offsetWidth } = oldPic;
-    const newPic = variantImages[0];
-    if (newPic) {
-      newPic.style.height = `${offsetHeight}px`;
-      newPic.style.width = `${offsetWidth}px`;
-      lcpSlide.replaceChildren(newPic);
-      const newImg = newPic.querySelector('img');
-      newImg.addEventListener('load', () => newPic.removeAttribute('style'));
-    }
-  }
-
-  slides.scrollTo({ left: 0, behavior: 'smooth' });
-
-  [slides, nav].forEach((wrapper) => {
-    wrapper.querySelectorAll('[data-source="variant"]').forEach((v) => v.remove());
-  });
-
-  const lcpSibling = lcpSlide.nextElementSibling;
-  variantImages.slice(1).forEach((pic) => {
-    const slide = buildSlide(pic, 'variant');
-    if (slide) slides.insertBefore(slide, lcpSibling);
-  });
-
-  rebuildIndices(gallery);
-  buildThumbnails(gallery);
-
+  // Set selectedVariant — triggers gallery, pricing, and add-to-cart subscribers
   state.set('selectedVariant', variant);
-
-  // update add to cart
-  const addToCartContainer = renderAddToCart(ph, block, state);
-  if (addToCartContainer) {
-    block.querySelector('.add-to-cart').replaceWith(addToCartContainer);
-  }
 }
 
 /**
