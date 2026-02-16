@@ -136,16 +136,23 @@ export default function createEdgeAdapter() {
       const body = {
         customer,
         shipping,
-        items: cart.items.map((item) => ({
-          sku: item.sku,
-          urlKey: (item.url || '').split('/').pop() || '',
-          name: item.name,
-          quantity: item.quantity,
-          price: {
-            currency: item.currency || 'USD',
-            final: String(item.price),
-          },
-        })),
+        items: cart.items.map((item) => {
+          let image = '';
+          if (item.image) {
+            try { image = new URL(item.image).pathname; } catch { image = item.image; }
+          }
+          return {
+            sku: item.sku,
+            urlKey: (item.url || '').split('/').pop() || '',
+            name: item.name,
+            quantity: item.quantity,
+            price: {
+              currency: item.currency || 'USD',
+              final: String(item.price),
+            },
+            custom: { image, url: item.url || '' },
+          };
+        }),
       };
 
       const headers = { 'Content-Type': 'application/json' };

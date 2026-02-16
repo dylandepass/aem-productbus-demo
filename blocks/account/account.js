@@ -35,6 +35,32 @@ function renderProfile(container, customer) {
   });
 }
 
+function renderLineItem(item) {
+  const image = item.custom?.image || '';
+  const href = item.custom?.url || '';
+  const unitPrice = parseFloat(item.price?.final || 0);
+  const lineTotal = item.quantity * unitPrice;
+  const currency = item.price?.currency || 'USD';
+
+  const nameEl = href
+    ? `<a class="order-item-name" href="${href}">${item.name || item.sku}</a>`
+    : `<span class="order-item-name">${item.name || item.sku}</span>`;
+
+  return `
+    <div class="order-line-item">
+      <img class="order-item-image" src="${image || '/icons/placeholder.png'}" alt="${item.name || item.sku}" loading="lazy" width="60" height="60">
+      <div class="order-item-info">
+        ${nameEl}
+        <span class="order-item-sku">${item.sku}</span>
+      </div>
+      <div class="order-item-pricing">
+        <span class="order-item-quantity">Qty: ${item.quantity}</span>
+        <span class="order-item-total">${formatPrice(lineTotal, currency)}</span>
+      </div>
+    </div>
+  `;
+}
+
 function renderOrders(container, orders) {
   if (!orders || orders.length === 0) {
     container.innerHTML = `
@@ -46,29 +72,35 @@ function renderOrders(container, orders) {
     return;
   }
 
-  const rows = orders.map((order) => `
-    <tr>
-      <td>${order.id || order.orderId || 'N/A'}</td>
-      <td>${order.createdAt ? formatDate(order.createdAt) : 'N/A'}</td>
-      <td>${order.state || 'completed'}</td>
-      <td>${order.total != null ? formatPrice(order.total) : 'N/A'}</td>
-    </tr>
-  `).join('');
+  const cards = orders.map((order) => {
+    const orderId = order.id || order.orderId || 'N/A';
+    const status = order.state || 'completed';
+    const date = order.createdAt ? formatDate(order.createdAt) : '';
+    const total = order.total != null ? formatPrice(order.total) : '';
+
+    const lineItems = (order.items || []).map(renderLineItem).join('');
+
+    return `
+      <div class="order-card">
+        <div class="order-header">
+          <div class="order-header-left">
+            <span class="order-id">#${orderId}</span>
+            ${date ? `<span class="order-date">${date}</span>` : ''}
+          </div>
+          <div class="order-header-right">
+            <span class="order-status order-status-${status}">${status}</span>
+            ${total ? `<span class="order-total">${total}</span>` : ''}
+          </div>
+        </div>
+        <div class="order-items">${lineItems}</div>
+      </div>
+    `;
+  }).join('');
 
   container.innerHTML = `
     <div class="account-orders">
       <h3>Order history</h3>
-      <table class="account-orders-table">
-        <thead>
-          <tr>
-            <th>Order</th>
-            <th>Date</th>
-            <th>Status</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
+      <div class="order-list">${cards}</div>
     </div>
   `;
 }
@@ -130,7 +162,7 @@ export default async function decorate(block) {
             (sum, item) => sum + (item.quantity * parseFloat(item.price?.final || 0)),
             0,
           );
-          return { ...order, total };
+          return { ...full, total };
         } catch {
           return order;
         }

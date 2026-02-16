@@ -92,11 +92,30 @@ export default function createMockAdapter() {
       // eslint-disable-next-line no-console
       console.log('[mock] createOrder', { customer, shipping, items: Object.values(items) });
       orderCounter += 1;
+
+      const orderItems = Object.values(items).map((item) => {
+        let image = '';
+        if (item.image) {
+          try { image = new URL(item.image).pathname; } catch { image = item.image; }
+        }
+        return {
+          sku: item.sku,
+          urlKey: (item.url || '').split('/').pop() || '',
+          name: item.name,
+          quantity: item.quantity,
+          price: {
+            currency: item.currency || 'USD',
+            final: String(item.price),
+          },
+          custom: { image, url: item.url || '' },
+        };
+      });
+
       const order = {
         id: `mock-${orderCounter}`,
         customer,
         shipping,
-        items: Object.values(items),
+        items: orderItems,
         state: 'completed',
         createdAt: new Date().toISOString(),
       };
