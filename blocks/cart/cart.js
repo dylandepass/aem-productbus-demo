@@ -138,28 +138,6 @@ function updateSummary(container, cart) {
   if (totalEl) totalEl.textContent = formatPrice(total);
 }
 
-// --- Order confirmation ---
-
-function showOrderConfirmation(wrapper, order, email) {
-  wrapper.innerHTML = '';
-  wrapper.style.gridTemplateColumns = '1fr';
-
-  const confirmation = document.createElement('div');
-  confirmation.className = 'cart-confirmation';
-
-  const orderId = order?.id || order?.orderId || 'N/A';
-
-  confirmation.innerHTML = `
-    <div class="cart-confirmation-icon">&#10003;</div>
-    <h2>Order confirmed</h2>
-    <p class="cart-confirmation-id">Order #${orderId}</p>
-    <p>We've sent a confirmation to <strong>${email}</strong>.</p>
-    <a href="/" class="cart-continue-shopping">Continue Shopping</a>
-  `;
-
-  wrapper.append(confirmation);
-}
-
 // --- Checkout form ---
 
 function buildCheckoutForm() {
