@@ -4,16 +4,17 @@ import { formatPrice, getOfferPricing } from '../../scripts/scripts.js';
  * Renders the pricing section of the PDP block.
  * @param {Object} ph - Placeholders object
  * @param {Element} block - The PDP block element
+ * @param {Object} state - The PDP state object
  * @param {Object} [variant] - Optional variant object with price data
  * @returns {Element|null} The pricing container element
  */
-export default function renderPricing(ph, block, variant) {
+export default function renderPricing(ph, block, state, variant) {
   const pricingContainer = document.createElement('div');
   pricingContainer.classList.add('pricing');
 
   const pricing = variant
     ? variant.price
-    : getOfferPricing(window.jsonLdData?.offers?.[0]);
+    : getOfferPricing(state.get('product')?.offers?.[0]);
   if (!pricing) {
     return pricingContainer;
   }

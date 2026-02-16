@@ -34,7 +34,9 @@ function getOptionTypes(variants) {
 
   return [...optionMap.entries()].map(([id, values]) => ({
     id,
-    values: [...values],
+    values: isSizeOption(id)
+      ? [...values].sort((a, b) => sizeOrder(a) - sizeOrder(b))
+      : [...values],
   }));
 }
 
@@ -45,9 +47,23 @@ function getOptionTypes(variants) {
  * @returns {Object|null} The matching variant
  */
 function findVariant(variants, selectedOptions) {
-  return variants.find((v) => v.options.every(
-    (opt) => selectedOptions[opt.id] === toClassName(opt.value),
-  ));
+  if (Object.keys(selectedOptions).length === 0) return null;
+  return variants.find((v) => {
+    const relevant = v.options.filter((opt) => opt.id in selectedOptions);
+    return relevant.length > 0
+      && relevant.every((opt) => selectedOptions[opt.id] === toClassName(opt.value));
+  });
+}
+
+/**
+ * Updates a single key in the selectedOptions state.
+ * @param {Object} state - The PDP state object
+ * @param {string} key - The option ID
+ * @param {string} value - The selected value
+ */
+function setSelectedOption(state, key, value) {
+  const opts = { ...state.get('selectedOptions'), [key]: value };
+  state.set('selectedOptions', opts);
 }
 
 /**
@@ -81,21 +97,25 @@ function updateSelectionState(container, selectedValue) {
  * Handles the change of a variant option.
  * @param {Object} ph - Placeholders object
  * @param {Element} block - The PDP block element
- * @param {Array} variants - The variants of the product
+ * @param {Object} state - The PDP state object
  * @param {string} optionId - The option ID that changed (e.g., "color", "size")
  * @param {string} value - The new value (className form)
  * @param {boolean} isParentOutOfStock - Whether the parent product is out of stock
  */
-export function onOptionChange(ph, block, variants, optionId, value, isParentOutOfStock = false) {
+export function onOptionChange(ph, block, state, optionId, value, isParentOutOfStock = false) {
+  const variants = state.get('variants');
+  const product = state.get('product');
+
   // Update selected options state
-  window.selectedOptions[optionId] = value;
+  setSelectedOption(state, optionId, value);
+  const selectedOptions = state.get('selectedOptions');
 
   // Update URL with all selected options
   const params = new URLSearchParams();
   const optionTypes = getOptionTypes(variants);
   const firstVariant = variants[0];
   optionTypes.forEach((type) => {
-    const selected = window.selectedOptions[type.id];
+    const selected = selectedOptions[type.id];
     const defaultVal = toClassName(getOptionValue(firstVariant, type.id));
     if (selected && selected !== defaultVal) {
       params.set(type.id, selected);
@@ -106,11 +126,11 @@ export function onOptionChange(ph, block, variants, optionId, value, isParentOut
   history.replaceState(null, '', search ? `?${search}` : window.location.pathname);
 
   // Find the variant matching all selected options
-  const variant = findVariant(variants, window.selectedOptions);
+  const variant = findVariant(variants, selectedOptions);
   if (!variant) return;
 
   const { sku } = variant;
-  const oos = checkVariantOutOfStock(sku);
+  const oos = checkVariantOutOfStock(sku, product);
   const buyBox = block.querySelector('.pdp-buy-box');
   buyBox.dataset.oos = isParentOutOfStock || oos;
   buyBox.dataset.sku = sku;
@@ -120,7 +140,7 @@ export function onOptionChange(ph, block, variants, optionId, value, isParentOut
   updateOOSMessage(ph, oosMessage, isParentOutOfStock);
 
   // Update pricing
-  const pricingContainer = renderPricing(ph, block, variant);
+  const pricingContainer = renderPricing(ph, block, state, variant);
   if (pricingContainer) {
     block.querySelector('.pricing').replaceWith(pricingContainer);
   }
@@ -129,14 +149,21 @@ export function onOptionChange(ph, block, variants, optionId, value, isParentOut
   optionTypes.forEach((type) => {
     const label = block.querySelector(`.selected-option-label[data-option-id="${type.id}"]`);
     if (label) {
-      const selectedVal = window.selectedOptions[type.id];
-      const rawVal = type.values.find((v) => toClassName(v) === selectedVal) || selectedVal;
-      const displayVal = formatOptionLabel(type.id, rawVal);
-      label.textContent = `${type.id.charAt(0).toUpperCase() + type.id.slice(1)}: ${displayVal}`;
+      const selectedVal = selectedOptions[type.id];
+      const typeLabel = type.id.charAt(0).toUpperCase() + type.id.slice(1);
+      if (selectedVal) {
+        const rawVal = type.values.find((v) => toClassName(v) === selectedVal) || selectedVal;
+        label.textContent = `${typeLabel}: ${formatOptionLabel(type.id, rawVal)}`;
+      } else {
+        // Single-value option with no selection — show the only value
+        label.textContent = type.values.length === 1
+          ? `${typeLabel}: ${formatOptionLabel(type.id, type.values[0])}`
+          : typeLabel;
+      }
     }
     const optGroup = block.querySelector(`.pdp-option-group[data-option-id="${type.id}"]`);
     if (optGroup) {
-      updateSelectionState(optGroup, window.selectedOptions[type.id]);
+      updateSelectionState(optGroup, selectedOptions[type.id]);
     }
   });
 
@@ -183,10 +210,10 @@ export function onOptionChange(ph, block, variants, optionId, value, isParentOut
   rebuildIndices(gallery);
   buildThumbnails(gallery);
 
-  window.selectedVariant = variant;
+  state.set('selectedVariant', variant);
 
   // update add to cart
-  const addToCartContainer = renderAddToCart(ph, block, window.jsonLdData);
+  const addToCartContainer = renderAddToCart(ph, block, state);
   if (addToCartContainer) {
     block.querySelector('.add-to-cart').replaceWith(addToCartContainer);
   }
@@ -245,6 +272,25 @@ function abbreviateSize(value) {
  */
 function isSizeOption(optionId) {
   return optionId.toLowerCase() === 'size';
+}
+
+/**
+ * Returns a numeric sort rank for a size value (smallest first).
+ * @param {string} value - The size value
+ * @returns {number} Sort rank
+ */
+function sizeOrder(value) {
+  const order = [
+    'x-small', 'extra-small', 'extra small', 'xs',
+    'small', 's',
+    'medium', 'm',
+    'large', 'l',
+    'x-large', 'extra-large', 'extra large', 'xl',
+    'xx-large', '2x-large', 'xxl',
+    'xxx-large', '3x-large', 'xxxl',
+  ];
+  const idx = order.indexOf(value.toLowerCase());
+  return idx >= 0 ? idx : order.length;
 }
 
 /**
@@ -307,11 +353,13 @@ function renderSizeOption(value, className, isOos) {
  * Renders the options section of the PDP block.
  * @param {Object} ph - Placeholders object
  * @param {Element} block - The PDP block element
- * @param {Array} variants - The variants of the product
+ * @param {Object} state - The PDP state object
  * @param {boolean} isParentOutOfStock - Whether the parent product is out of stock
  * @returns {Element} The options container element
  */
-export function renderOptions(ph, block, variants, isParentOutOfStock) {
+export function renderOptions(ph, block, state, isParentOutOfStock) {
+  const variants = state.get('variants');
+  const product = state.get('product');
   const optionsContainer = document.createElement('div');
   optionsContainer.classList.add('options');
 
@@ -333,25 +381,29 @@ export function renderOptions(ph, block, variants, isParentOutOfStock) {
   }
 
   // Initialize selected options from first variant
-  window.selectedOptions = {};
+  const initialOptions = {};
   const defaultVariant = variants[0];
   optionTypes.forEach((type) => {
     const defaultVal = getOptionValue(defaultVariant, type.id);
-    if (defaultVal) window.selectedOptions[type.id] = toClassName(defaultVal);
+    if (defaultVal) initialOptions[type.id] = toClassName(defaultVal);
   });
+  state.set('selectedOptions', initialOptions);
 
   // Render each option type group
   optionTypes.forEach((type) => {
+    const defaultVal = getOptionValue(defaultVariant, type.id);
+
     const selectionContainer = document.createElement('div');
     selectionContainer.classList.add('selection');
 
-    const defaultVal = getOptionValue(defaultVariant, type.id);
-    const displayVal = formatOptionLabel(type.id, defaultVal);
     const selectedOptionLabel = document.createElement('div');
     selectedOptionLabel.classList.add('selected-option-label');
     selectedOptionLabel.dataset.optionId = type.id;
     const typeLabel = type.id.charAt(0).toUpperCase() + type.id.slice(1);
-    selectedOptionLabel.textContent = `${typeLabel}: ${displayVal}`;
+    const displayVal = defaultVal || (type.values.length === 1 ? type.values[0] : null);
+    selectedOptionLabel.textContent = displayVal
+      ? `${typeLabel}: ${formatOptionLabel(type.id, displayVal)}`
+      : typeLabel;
     selectionContainer.append(selectedOptionLabel);
 
     // Only render swatches if there are multiple values to choose from
@@ -363,12 +415,13 @@ export function renderOptions(ph, block, variants, isParentOutOfStock) {
       type.values.forEach((value) => {
         const className = toClassName(value);
 
-        // Check if any variant with this option value is OOS
-        const variantWithValue = variants.find(
+        // Check if all variants with this option value are OOS
+        const variantsWithValue = variants.filter(
           (v) => getOptionValue(v, type.id)
             && toClassName(getOptionValue(v, type.id)) === className,
         );
-        const isOos = variantWithValue ? checkVariantOutOfStock(variantWithValue.sku) : true;
+        const isOos = variantsWithValue.length === 0
+          || variantsWithValue.every((v) => checkVariantOutOfStock(v.sku, product));
 
         let swatch;
         if (isColorOption(type.id)) {
@@ -385,7 +438,7 @@ export function renderOptions(ph, block, variants, isParentOutOfStock) {
         }
 
         swatch.addEventListener('click', () => {
-          onOptionChange(ph, block, variants, type.id, className, isParentOutOfStock);
+          onOptionChange(ph, block, state, type.id, className, isParentOutOfStock);
         });
 
         optionGroup.append(swatch);

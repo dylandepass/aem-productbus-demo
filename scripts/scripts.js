@@ -210,50 +210,24 @@ export function buildCarousel(container, pagination = true) {
 }
 
 /**
- * Parses variant sections from the Product Pipeline HTML.
- * @param {Array<Element>} sections - The variant section elements
- * @returns {Array<Object>} Array of variant objects with metadata, options, price, and images
- */
-function parseVariants(sections) {
-  return sections.map((div) => {
-    const name = div.querySelector('h2')?.textContent.trim();
-    const sku = div.dataset.sku;
-    const imagesHTML = div.querySelectorAll('picture');
-
-    const ldVariant = window.jsonLdData.offers.find((offer) => offer.sku === sku);
-    const price = getOfferPricing(ldVariant);
-
-    // Get options from JSON-LD (supports color, size, and any other option types)
-    const options = ldVariant?.options || [];
-
-    return {
-      sku,
-      name,
-      options,
-      price,
-      images: imagesHTML,
-      availability: ldVariant?.availability,
-    };
-  });
-}
-
-/**
  * Checks if a variant is out of stock by SKU.
  * @param {string} sku - The variant SKU to check
+ * @param {Object} jsonLdData - Parsed JSON-LD product data
  * @returns {boolean} True if the variant is out of stock
  */
-export function checkVariantOutOfStock(sku) {
-  const offer = window.jsonLdData.offers.find((o) => o.sku === sku);
+export function checkVariantOutOfStock(sku, jsonLdData) {
+  const offer = jsonLdData.offers.find((o) => o.sku === sku);
   if (!offer) return true;
   return offer.availability === 'https://schema.org/OutOfStock';
 }
 
 /**
  * Checks if the entire product is out of stock (all variants OOS).
+ * @param {Object} jsonLdData - Parsed JSON-LD product data
  * @returns {boolean} True if the product is out of stock
  */
-export function isProductOutOfStock() {
-  const { offers } = window.jsonLdData;
+export function isProductOutOfStock(jsonLdData) {
+  const { offers } = jsonLdData;
 
   if (!offers || offers.length === 0) return true;
 
@@ -347,21 +321,15 @@ function buildPDPBlock(main) {
       lcpPicture.remove();
     }
 
-    section.append(buildBlock('pdp', { elems: [...lcp.children] }));
+    const block = buildBlock('pdp', { elems: [...lcp.children] });
+
+    // Stash raw DOM for pdp.js to parse in decorate()
+    block.variantSections = Array.from(main.querySelectorAll(':scope > div.section'));
+    block.variantSections.forEach((v) => v.remove());
+    block.authoredContent = Array.from(main.querySelectorAll(':scope > div'));
+
+    section.append(block);
   }
-
-  // Get the JSON-LD from the head and parse it
-  const jsonLd = document.head.querySelector('script[type="application/ld+json"]');
-  window.jsonLdData = jsonLd ? JSON.parse(jsonLd.textContent) : null;
-
-  const variantSections = Array.from(main.querySelectorAll(':scope > div.section'));
-
-  // Parse variants and remove from DOM
-  window.variants = parseVariants(variantSections);
-  variantSections.forEach((v) => v.remove());
-
-  // Store remaining authored content sections
-  window.authoredContent = Array.from(main.querySelectorAll(':scope > div'));
 
   main.textContent = '';
   main.prepend(section);
