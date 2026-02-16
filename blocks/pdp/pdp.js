@@ -1,6 +1,6 @@
 import { fetchPlaceholders } from '../../scripts/aem.js';
 import renderAddToCart from './add-to-cart.js';
-import renderGallery from './gallery.js';
+import renderGallery, { updateGalleryImages } from './gallery.js';
 import renderPricing from './pricing.js';
 import { renderOptions, onOptionChange } from './options.js';
 import {
@@ -200,6 +200,17 @@ export default async function decorate(block) {
   // Assemble layout
   if (content) block.append(content);
   block.append(title, gallery, buyBox, related);
+
+  // Subscribe to variant changes — gallery, pricing, and add-to-cart update themselves
+  state.onChange('selectedVariant', () => updateGalleryImages(block, state));
+  state.onChange('selectedVariant', (variant) => {
+    const el = renderPricing(ph, block, state, variant);
+    if (el) block.querySelector('.pricing')?.replaceWith(el);
+  });
+  state.onChange('selectedVariant', () => {
+    const el = renderAddToCart(ph, block, state);
+    if (el) block.querySelector('.add-to-cart')?.replaceWith(el);
+  });
 
   // Apply initial state
   applyInitialSelection(state, ph, block, isParentOutOfStock, buyBox);

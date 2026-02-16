@@ -1,4 +1,4 @@
-import { buildCarousel } from '../../scripts/scripts.js';
+import { buildCarousel, rebuildIndices } from '../../scripts/scripts.js';
 
 /**
  * Accepts an element and returns clean <li> > <picture> structure.
@@ -42,6 +42,58 @@ export function buildThumbnails(carousel) {
 
     observer.observe(btn, { attributes: true, attributeFilter: ['aria-checked'] });
   });
+}
+
+/**
+ * Updates gallery images when the selected variant changes.
+ * @param {Element} block - The PDP block element
+ * @param {Object} state - The PDP state object
+ */
+export function updateGalleryImages(block, state) {
+  const variant = state.get('selectedVariant');
+  if (!variant) return;
+
+  let variantImages = variant.images || [];
+  variantImages = [...variantImages].map((v, i) => {
+    const clone = v.cloneNode(true);
+    clone.dataset.source = i ? 'variant' : 'lcp';
+    return clone;
+  });
+
+  const gallery = block.querySelector('.gallery');
+  const slides = gallery.querySelector('ul');
+  const nav = gallery.querySelector('[role="radiogroup"]');
+
+  // update LCP image(s)
+  const lcpSlide = slides.querySelector('[data-source="lcp"]');
+  const lcpButton = nav.querySelector('[data-source="lcp"]');
+  if (lcpSlide && lcpButton) {
+    const oldPic = lcpSlide.querySelector('picture');
+    const { offsetHeight, offsetWidth } = oldPic;
+    const newPic = variantImages[0];
+    if (newPic) {
+      newPic.style.height = `${offsetHeight}px`;
+      newPic.style.width = `${offsetWidth}px`;
+      lcpSlide.replaceChildren(newPic);
+      const newImg = newPic.querySelector('img');
+      newImg.addEventListener('load', () => newPic.removeAttribute('style'));
+    }
+  }
+
+  slides.scrollTo({ left: 0, behavior: 'smooth' });
+
+  [slides, nav].forEach((wrapper) => {
+    wrapper.querySelectorAll('[data-source="variant"]').forEach((v) => v.remove());
+  });
+
+  const lcpSibling = slides.querySelector('[data-source="lcp"]')?.nextElementSibling;
+  variantImages.slice(1).forEach((pic) => {
+    const slide = buildSlide(pic, 'variant');
+    if (slide) slides.insertBefore(slide, lcpSibling);
+  });
+
+  rebuildIndices(gallery);
+  buildThumbnails(gallery);
 }
 
 /**
