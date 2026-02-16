@@ -1,4 +1,4 @@
-/* stylelint-disable selector-class-pattern */
+/* stylelint-disable selector-class-pattern, no-descending-specificity */
 
 /* header and nav layout */
 header .nav-wrapper {
@@ -34,8 +34,27 @@ header nav {
     font-family: var(--body-font-family);
 }
 
+/* sections: base first, then expanded state */
+header nav .nav-sections {
+    grid-area: sections;
+    flex: 1 1 auto;
+    margin: 0;
+    overflow-y: scroll;
+    position: relative;
+    height: 100dvh;
+    transform: translateX(-100%);
+}
+
 header nav[aria-expanded='true'] .nav-sections {
     overflow-y: auto;
+    width: 100vw;
+    z-index: 2;
+    position: fixed;
+    top: 0;
+    left: 0;
+    transform: none;
+    background-color: rgb(0 0 0 / 70%);
+    align-self: start;
 }
 
 @media (width > 990px) {
@@ -89,6 +108,9 @@ header nav .nav-hamburger-icon::after {
     display: block;
     position: relative;
     width: 24px;
+    height: 2px;
+    border-radius: 2px;
+    background: grey;
 }
 
 header nav .nav-hamburger-icon::before,
@@ -96,14 +118,6 @@ header nav .nav-hamburger-icon::after {
     content: '';
     position: absolute;
     background: currentcolor;
-}
-
-header nav .nav-hamburger-icon,
-header nav .nav-hamburger-icon::before,
-header nav .nav-hamburger-icon::after {
-    height: 2px;
-    border-radius: 2px;
-    background: grey;
 }
 
 header nav .nav-hamburger-icon::before {
@@ -143,17 +157,6 @@ header nav .nav-brand img {
     max-width: 120px;
 }
 
-/* sections */
-header nav .nav-sections {
-    grid-area: sections;
-    flex: 1 1 auto;
-    margin: 0;
-    overflow-y: scroll;
-    position: relative;
-    height: 100dvh;
-    transform: translateX(-100%);
-}
-
 header nav .nav-sections .nav-sections-ul-wrapper {
     background-color: var(--text-color-inverse);
     position: absolute;
@@ -190,17 +193,6 @@ header nav .nav-sections .nav-sections-ul-wrapper[data-authenticated="true"]::be
     background-position: 14px center;
   background-repeat: no-repeat;
     vertical-align: middle;
-}
-
-header nav[aria-expanded='true'] .nav-sections {
-    width: 100vw;
-    z-index: 2;
-    position: fixed;
-    top: 0;
-    left: 0;
-    transform: none;
-    background-color: rgb(0 0 0 / 70%);
-    align-self: start;
 }
 
 header nav[aria-expanded='true'] .nav-sections .nav-sections-ul-wrapper {
@@ -1221,6 +1213,8 @@ header .nav-search-input .search_autocomplete .popover-container {
     header nav .nav-sections .nav-sections-ul-wrapper > ul > li > a {
         border-bottom: none;
         height: 100%;
+        padding-left: 1.4rem;
+        padding-right: 1.34rem;
     }
 
     header
@@ -1305,11 +1299,6 @@ header .nav-search-input .search_autocomplete .popover-container {
     > a
     > .accordian-icon {
         display: none;
-    }
-
-    header nav .nav-sections .nav-sections-ul-wrapper > ul > li > a {
-        padding-left: 1.4rem;
-        padding-right: 1.34rem;
     }
 
     /* fallback for nav items that remain as <p> */
