@@ -160,11 +160,30 @@ function scrollToHash() {
  * @param {HTMLElement} block - The PLP block element
  */
 export default async function decorate(block) {
-  // Parse categories from authored block content
-  const categories = [...block.querySelectorAll(':scope > div > div')].map((elem) => ({
-    title: elem.querySelector('h1, h2, h3, h4')?.textContent.trim() || '',
-    path: elem.querySelector('p')?.textContent.trim() || '',
-  }));
+  // Parse categories from authored block rows
+  const categories = [...block.querySelectorAll(':scope > div')].map((row) => {
+    const cells = [...row.children];
+    const textCell = cells[0];
+    const marketingCell = cells[1] || null;
+
+    const category = {
+      title: textCell?.querySelector('h1, h2, h3, h4')?.textContent.trim() || '',
+      path: textCell?.querySelector('p')?.textContent.trim() || '',
+      marketingImage: null,
+      marketingLink: null,
+    };
+
+    if (marketingCell) {
+      const picture = marketingCell.querySelector('picture');
+      const link = marketingCell.querySelector('a');
+      if (picture) {
+        category.marketingImage = picture;
+        category.marketingLink = link?.href || null;
+      }
+    }
+
+    return category;
+  });
 
   block.innerHTML = '';
 
@@ -244,6 +263,23 @@ export default async function decorate(block) {
     products.forEach((product) => {
       grid.append(buildProductCard(product));
     });
+
+    // Insert marketing content into the grid if authored
+    if (cat.marketingImage && products.length > 0) {
+      const promo = document.createElement('div');
+      promo.className = 'plp-marketing-card';
+
+      if (cat.marketingLink) {
+        const link = document.createElement('a');
+        link.href = cat.marketingLink;
+        link.append(cat.marketingImage);
+        promo.append(link);
+      } else {
+        promo.append(cat.marketingImage);
+      }
+
+      grid.append(promo);
+    }
 
     section.append(grid);
     content.append(section);
