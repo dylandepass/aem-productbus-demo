@@ -53,6 +53,239 @@
   border-color: #ccc;
 }
 
+/* Addresses */
+
+.account-addresses {
+  margin-top: var(--spacing-s);
+  padding-top: var(--spacing-s);
+  border-top: 1px solid var(--border-color);
+}
+
+.account-addresses h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 var(--spacing-xs);
+}
+
+.account-addresses-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xs);
+}
+
+.account-addresses-header h3 {
+  margin: 0;
+}
+
+.address-add-btn {
+  padding: 0.4rem 1rem;
+  background: var(--button-primary-bg);
+  color: var(--button-primary-color);
+  border: none;
+  border-radius: var(--radius-m);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.address-add-btn:hover {
+  background: var(--button-primary-hover-bg);
+}
+
+/* Address cards */
+
+.address-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.address-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-m);
+  padding: var(--spacing-xs);
+  gap: var(--spacing-xs);
+}
+
+.address-card-details p {
+  margin: 2px 0;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.address-card-name {
+  font-weight: 600;
+}
+
+.address-card-company {
+  color: var(--text-color-secondary);
+  font-size: 0.875rem;
+}
+
+.address-card-phone {
+  color: var(--text-color-secondary);
+  font-size: 0.875rem;
+}
+
+.address-card-actions {
+  display: flex;
+  gap: var(--spacing-xxs);
+  flex-shrink: 0;
+}
+
+.address-edit-btn,
+.address-delete-btn {
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-s);
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.75rem;
+  color: var(--text-color);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.address-edit-btn:hover {
+  background: var(--light-color);
+  border-color: #ccc;
+}
+
+.address-delete-btn:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #991b1b;
+}
+
+/* Address form */
+
+.address-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xxs);
+}
+
+.address-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xxs);
+}
+
+.address-input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-s);
+  font-family: inherit;
+  font-size: 0.9375rem;
+  color: var(--text-color);
+  background: var(--background-color);
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.address-input:focus {
+  outline: none;
+  border-color: var(--link-color);
+}
+
+.address-input-error {
+  border-color: #ef4444;
+}
+
+.address-input::placeholder {
+  color: var(--text-color-muted);
+}
+
+select.address-input {
+  appearance: auto;
+}
+
+.address-form-actions {
+  display: flex;
+  gap: var(--spacing-xxs);
+  margin-top: var(--spacing-xxs);
+}
+
+.address-save-btn {
+  padding: 0.6rem 1.5rem;
+  background: var(--button-primary-bg);
+  color: var(--button-primary-color);
+  border: none;
+  border-radius: var(--radius-m);
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  transition: background 0.2s;
+}
+
+.address-save-btn:hover {
+  background: var(--button-primary-hover-bg);
+}
+
+.address-save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.address-cancel-btn {
+  padding: 0.6rem 1.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-m);
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  color: var(--text-color);
+  transition: background 0.2s;
+}
+
+.address-cancel-btn:hover {
+  background: var(--light-color);
+}
+
+/* Places autocomplete in address form */
+
+.account-addresses .places-autocomplete-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.account-addresses .places-autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-top: none;
+  border-radius: 0 0 var(--radius-s) var(--radius-s);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: 0 4px 6px rgb(0 0 0 / 10%);
+}
+
+.account-addresses .places-autocomplete-dropdown li {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.account-addresses .places-autocomplete-dropdown li:hover {
+  background: var(--light-color);
+}
+
 /* Orders */
 
 .account-orders {
@@ -238,6 +471,14 @@ a.order-item-name:hover {
     grid-column: 2;
     align-items: flex-start;
     text-align: left;
+  }
+
+  .address-card {
+    flex-direction: column;
+  }
+
+  .address-form-row {
+    grid-template-columns: 1fr;
   }
 }
 

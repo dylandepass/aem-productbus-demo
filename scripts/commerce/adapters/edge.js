@@ -273,5 +273,55 @@ export default function createEdgeAdapter() {
       const data = await resp.json();
       return data.orders || [];
     },
+
+    // Addresses
+
+    async getAddresses() {
+      const user = this.getCustomer();
+      if (!user?.email) return [];
+      const resp = await authFetch(
+        `${API_ORIGIN}/customers/${user.email}/addresses`,
+      );
+      if (!resp.ok) return [];
+      const data = await resp.json();
+      const list = data.addresses || [];
+      const base = `${API_ORIGIN}/customers/${user.email}/addresses`;
+      const full = await Promise.all(
+        list.map(async (a) => {
+          const r = await authFetch(`${base}/${a.id}`);
+          if (!r.ok) return a;
+          const d = await r.json();
+          return { ...a, ...d.address };
+        }),
+      );
+      return full;
+    },
+
+    async createAddress(address) {
+      const user = this.getCustomer();
+      if (!user?.email) throw new Error('Not authenticated');
+      const resp = await authFetch(
+        `${API_ORIGIN}/customers/${user.email}/addresses`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(address),
+        },
+      );
+      if (!resp.ok) throw new Error(`Create address failed: ${resp.status}`);
+      const data = await resp.json();
+      return data.address;
+    },
+
+    async deleteAddress(addressId) {
+      const user = this.getCustomer();
+      if (!user?.email) throw new Error('Not authenticated');
+      const resp = await authFetch(
+        `${API_ORIGIN}/customers/${user.email}/addresses/${addressId}`,
+        { method: 'DELETE' },
+      );
+      if (!resp.ok) throw new Error(`Delete address failed: ${resp.status}`);
+      return true;
+    },
   };
 }

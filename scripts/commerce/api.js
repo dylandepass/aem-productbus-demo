@@ -150,6 +150,23 @@ export const commerce = {
     return a.getOrders();
   },
 
+  // --- Addresses ---
+
+  async getAddresses() {
+    const a = await loadAdapter();
+    return a.getAddresses();
+  },
+
+  async createAddress(address) {
+    const a = await loadAdapter();
+    return a.createAddress(address);
+  },
+
+  async deleteAddress(addressId) {
+    const a = await loadAdapter();
+    return a.deleteAddress(addressId);
+  },
+
   // --- Events ---
 
   EVENTS,

@@ -290,6 +290,89 @@ function showOrderConfirmation(wrapper, order, email) {
   wrapper.append(confirmation);
 }
 
+// --- Address picker ---
+
+function fillShippingForm(section, addr) {
+  const [first, ...rest] = (addr.name || '').split(' ');
+  const fields = {
+    firstName: first || '',
+    lastName: rest.join(' ') || '',
+    address1: addr.address1 || '',
+    address2: addr.address2 || '',
+    city: addr.city || '',
+    state: addr.state || '',
+    zip: addr.zip || '',
+    country: addr.country || '',
+    email: addr.email || '',
+  };
+  Object.entries(fields).forEach(([name, value]) => {
+    const el = section.querySelector(`[name="${name}"]`);
+    if (el) {
+      el.value = value;
+      clearFieldError(el);
+    }
+  });
+}
+
+function showAddressPicker(section, addresses) {
+  const overlay = document.createElement('div');
+  overlay.className = 'cart-address-overlay';
+
+  const modal = document.createElement('div');
+  modal.className = 'cart-address-modal';
+
+  const header = document.createElement('div');
+  header.className = 'cart-address-modal-header';
+  header.innerHTML = '<h3>Select address</h3><button class="cart-address-modal-close" aria-label="Close">&times;</button>';
+
+  const list = document.createElement('div');
+  list.className = 'cart-address-modal-list';
+
+  addresses.forEach((addr) => {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'cart-address-option';
+
+    const parts = [addr.address1];
+    if (addr.address2) parts.push(addr.address2);
+    const cityLine = [addr.city, addr.state, addr.zip]
+      .filter(Boolean).join(', ');
+
+    card.innerHTML = `
+      <p class="cart-address-option-name">${addr.name || ''}</p>
+      <p>${parts.join(', ')}</p>
+      <p>${cityLine}</p>
+      <p>${addr.country || ''}</p>
+    `;
+
+    card.addEventListener('click', () => {
+      fillShippingForm(section, addr);
+      close();
+    });
+    list.append(card);
+  });
+
+  modal.append(header, list);
+  document.body.append(overlay, modal);
+  document.body.style.overflow = 'hidden';
+
+  function close() {
+    overlay.remove();
+    modal.remove();
+    document.body.style.overflow = '';
+  }
+
+  overlay.addEventListener('click', close);
+  header.querySelector('.cart-address-modal-close')
+    .addEventListener('click', close);
+  window.addEventListener('keydown', function onKey(e) {
+    if (e.key === 'Escape') {
+      close();
+      window.removeEventListener('keydown', onKey);
+    }
+  });
+}
+
 // --- Checkout form ---
 
 function buildCheckoutForm() {
@@ -300,14 +383,14 @@ function buildCheckoutForm() {
     <div class="cart-contact">
       <h3>Contact</h3>
       <input type="email" class="cart-input" name="email" placeholder="Email address" autocomplete="email" required>
-      <label class="cart-create-account-label">
-        <input type="checkbox" class="cart-create-account-check">
-        <span>Create an account</span>
-      </label>
+      <p class="cart-signin-prompt">Already have an account? <a href="#" class="cart-signin-link">Sign in</a></p>
     </div>
 
     <div class="cart-shipping">
-      <h3>Shipping address</h3>
+      <div class="cart-shipping-header">
+        <h3>Shipping address</h3>
+        <button type="button" class="cart-change-address-btn" style="display:none">Change</button>
+      </div>
       <div class="cart-form-row">
         <input type="text" class="cart-input" name="firstName" placeholder="First name" autocomplete="given-name" required minlength="2">
         <input type="text" class="cart-input" name="lastName" placeholder="Last name" autocomplete="family-name" required minlength="2">
@@ -399,29 +482,69 @@ function buildCheckoutForm() {
   // --- Address Autocomplete (via worker proxy) ---
   initAddressAutocomplete(section);
 
-  // --- Auto-fill from logged-in customer profile ---
+  // --- Sign-in link ---
+  const signinLink = section.querySelector('.cart-signin-link');
+  signinLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.dispatchEvent(new CustomEvent('commerce:open-auth-panel'));
+  });
+
+  // --- Auto-fill from logged-in customer profile and saved addresses ---
+  async function applyLoggedInState() {
+    section.querySelector('.cart-signin-prompt').style.display = 'none';
+    const customer = await commerce.getCustomerProfile();
+    const user = await commerce.getCustomer();
+    const addresses = await commerce.getAddresses();
+    const addr = addresses?.[0];
+
+    // Pre-fill email from profile
+    const emailEl = section.querySelector('[name="email"]');
+    const email = customer?.email || user?.email;
+    if (emailEl && email) {
+      emailEl.value = email;
+      clearFieldError(emailEl);
+    }
+
+    // Pre-fill from first address or customer profile
+    if (addr) {
+      fillShippingForm(section, addr);
+    } else {
+      const fields = {
+        firstName: customer?.firstName,
+        lastName: customer?.lastName,
+      };
+      Object.entries(fields).forEach(([name, value]) => {
+        if (!value) return;
+        const el = section.querySelector(`[name="${name}"]`);
+        if (el && !el.value) {
+          el.value = value;
+          clearFieldError(el);
+        }
+      });
+    }
+
+    // Show "Change" button if user has multiple addresses
+    if (addresses.length > 1) {
+      const changeBtn = section.querySelector('.cart-change-address-btn');
+      changeBtn.style.display = '';
+      changeBtn.addEventListener('click', () => {
+        showAddressPicker(section, addresses);
+      });
+    }
+  }
+
   (async () => {
     try {
-      if (await commerce.isLoggedIn()) {
-        // Try full profile first, fall back to session user info (email)
-        const customer = await commerce.getCustomerProfile();
-        const user = await commerce.getCustomer();
-        const fields = {
-          email: customer?.email || user?.email,
-          firstName: customer?.firstName,
-          lastName: customer?.lastName,
-        };
-        Object.entries(fields).forEach(([name, value]) => {
-          if (!value) return;
-          const input = section.querySelector(`[name="${name}"]`);
-          if (input && !input.value) {
-            input.value = value;
-            clearFieldError(input);
-          }
-        });
-      }
+      if (await commerce.isLoggedIn()) await applyLoggedInState();
     } catch { /* silent — form works without pre-fill */ }
   })();
+
+  // Update form when user signs in from the cart page
+  document.addEventListener('commerce:auth-state-changed', async (e) => {
+    if (e.detail?.loggedIn) {
+      try { await applyLoggedInState(); } catch { /* silent */ }
+    }
+  });
 
   return section;
 }
