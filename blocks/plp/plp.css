@@ -197,3 +197,32 @@ main > .section.plp-container {
   color: var(--text-color-muted);
   margin-left: 4px;
 }
+
+/* Marketing card — hidden on mobile */
+.plp .plp-marketing-card {
+  display: none;
+}
+
+@media (width >= 768px) {
+  .plp .plp-marketing-card {
+    display: block;
+    grid-column: -2 / -1;
+    grid-row: 1 / span 2;
+    border-radius: var(--radius-s);
+    overflow: hidden;
+  }
+
+  .plp .plp-marketing-card a {
+    display: block;
+    height: 100%;
+  }
+
+  .plp .plp-marketing-card picture,
+  .plp .plp-marketing-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: var(--radius-s);
+  }
+}
