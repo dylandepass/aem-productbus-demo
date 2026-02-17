@@ -224,7 +224,7 @@ a:hover {
 
 /* buttons */
 a.button:any-link,
-button {
+.button-container button {
   box-sizing: border-box;
   display: inline-block;
   max-width: 100%;
@@ -248,20 +248,20 @@ button {
 
 a.button:hover,
 a.button:focus,
-button:hover,
-button:focus {
+.button-container button:hover,
+.button-container button:focus {
   background-color: var(--link-hover-color);
   cursor: pointer;
 }
 
-button:disabled,
-button:disabled:hover {
+.button-container button:disabled,
+.button-container button:disabled:hover {
   background-color: var(--light-color);
   cursor: unset;
 }
 
 a.button.secondary,
-button.secondary {
+.button-container button.secondary {
   background-color: unset;
   border: 2px solid currentcolor;
   color: var(--text-color);
