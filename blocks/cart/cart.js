@@ -328,6 +328,12 @@ function showAddressPicker(section, addresses) {
   const list = document.createElement('div');
   list.className = 'cart-address-modal-list';
 
+  function close() {
+    overlay.remove();
+    modal.remove();
+    document.body.style.overflow = '';
+  }
+
   addresses.forEach((addr) => {
     const card = document.createElement('button');
     card.type = 'button';
@@ -355,12 +361,6 @@ function showAddressPicker(section, addresses) {
   modal.append(header, list);
   document.body.append(overlay, modal);
   document.body.style.overflow = 'hidden';
-
-  function close() {
-    overlay.remove();
-    modal.remove();
-    document.body.style.overflow = '';
-  }
 
   overlay.addEventListener('click', close);
   header.querySelector('.cart-address-modal-close')
