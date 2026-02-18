@@ -19,6 +19,7 @@
 .related-products.carousel > ul > li {
   flex: 0 0 calc(50% - var(--spacing-xs) / 2);
   width: calc(50% - var(--spacing-xs) / 2);
+  justify-content: flex-start;
 }
 
 @media (width >= 600px) {

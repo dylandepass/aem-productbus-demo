@@ -98,6 +98,11 @@ export const commerce = {
 
   // --- Orders ---
 
+  async createCheckoutSession({ customer, shipping }) {
+    const a = await loadAdapter();
+    return a.createCheckoutSession({ customer, shipping });
+  },
+
   async createOrder({ customer, shipping }) {
     const a = await loadAdapter();
     const order = await a.createOrder({ customer, shipping });
