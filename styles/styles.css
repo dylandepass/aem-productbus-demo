@@ -211,13 +211,13 @@ button {
 }
 
 /* links */
-a:any-link {
+a:where(:any-link) {
   color: var(--link-color);
   text-decoration: none;
   overflow-wrap: break-word;
 }
 
-a:hover {
+a:where(:hover) {
   color: var(--link-hover-color);
   text-decoration: underline;
 }

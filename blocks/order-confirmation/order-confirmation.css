@@ -1,0 +1,66 @@
+/* Order confirmation block */
+
+.order-confirmation-content {
+  text-align: center;
+  padding: var(--spacing-xl) var(--spacing-m);
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.order-confirmation-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto var(--spacing-s);
+  border-radius: 50%;
+  background: var(--success-color, #16a34a);
+  color: #fff;
+  font-size: 2rem;
+  line-height: 64px;
+}
+
+.order-confirmation-icon-error {
+  width: 40px;
+  height: 40px;
+  font-size: 1.25rem;
+  line-height: 40px;
+  background: var(--error-color, #dc2626);
+}
+
+.order-confirmation-content h2 {
+  font-size: var(--heading-font-size-m);
+  font-weight: 600;
+  margin: 0 0 var(--spacing-xxs);
+}
+
+.order-confirmation-total {
+  font-size: var(--heading-font-size-s);
+  font-weight: 600;
+  margin: 0 0 var(--spacing-xs);
+}
+
+.order-confirmation-content p {
+  margin: 0 0 var(--spacing-s);
+  color: var(--text-color-secondary);
+}
+
+.order-confirmation-note {
+  font-size: var(--body-font-size-s);
+}
+
+.order-confirmation-continue {
+  display: inline-block;
+  margin-top: var(--spacing-s);
+  padding: var(--spacing-xs) var(--spacing-m);
+  background: var(--primary-color, #111);
+  color: #fff;
+  border-radius: var(--radius-s);
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity var(--transition-normal);
+}
+
+.order-confirmation-continue:hover {
+  opacity: 0.85;
+  color: #fff;
+  text-decoration: none;
+}

@@ -131,6 +131,35 @@ export default function createEdgeAdapter() {
 
     // Orders
 
+    async createCheckoutSession({ customer, shipping }) {
+      const cart = buildCart();
+      const body = {
+        customer,
+        shipping,
+        items: cart.items.map((item) => ({
+          sku: item.sku,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          currency: item.currency || 'USD',
+          image: item.image || '',
+          url: item.url || '',
+        })),
+      };
+
+      const resp = await fetch(`${API_ORIGIN}/checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (!resp.ok) {
+        throw new Error(`Checkout failed: ${resp.status}`);
+      }
+
+      return resp.json();
+    },
+
     async createOrder({ customer, shipping }) {
       const cart = buildCart();
       const body = {

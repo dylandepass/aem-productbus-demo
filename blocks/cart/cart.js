@@ -268,28 +268,6 @@ function initAddressAutocomplete(section) {
   });
 }
 
-// --- Order confirmation ---
-
-function showOrderConfirmation(wrapper, order, email) {
-  wrapper.innerHTML = '';
-  wrapper.style.gridTemplateColumns = '1fr';
-
-  const confirmation = document.createElement('div');
-  confirmation.className = 'cart-confirmation';
-
-  const orderId = order?.id || order?.orderId || 'N/A';
-
-  confirmation.innerHTML = `
-    <div class="cart-confirmation-icon">&#10003;</div>
-    <h2>Order confirmed</h2>
-    <p class="cart-confirmation-id">Order #${orderId}</p>
-    <p>We've sent a confirmation to <strong>${email}</strong>.</p>
-    <a href="/" class="cart-continue-shopping">Continue Shopping</a>
-  `;
-
-  wrapper.append(confirmation);
-}
-
 // --- Address picker ---
 
 function fillShippingForm(section, addr) {
@@ -430,7 +408,7 @@ function buildCheckoutForm() {
         <span>Total</span>
         <span class="cart-summary-total-value">$0.00</span>
       </div>
-      <button class="cart-checkout-btn" type="button">Place Order</button>
+      <button class="cart-checkout-btn" type="button">Pay Now</button>
       <p class="cart-checkout-note"></p>
     </div>
   `;
@@ -451,10 +429,10 @@ function buildCheckoutForm() {
     const country = section.querySelector('[name="country"]').value;
 
     placeBtn.disabled = true;
-    placeBtn.textContent = 'Placing order…';
+    placeBtn.textContent = 'Redirecting to payment…';
 
     try {
-      const order = await commerce.createOrder({
+      const { url } = await commerce.createCheckoutSession({
         customer: { email, firstName, lastName },
         shipping: {
           name: `${firstName} ${lastName}`,
@@ -468,13 +446,12 @@ function buildCheckoutForm() {
         },
       });
 
-      await commerce.clearCart();
-      showOrderConfirmation(section.closest('.cart-layout'), order, email);
+      window.location.href = url;
     } catch (err) {
       placeBtn.disabled = false;
-      placeBtn.textContent = 'Place Order';
+      placeBtn.textContent = 'Pay Now';
       const note = section.querySelector('.cart-checkout-note');
-      note.textContent = `Order failed: ${err.message}`;
+      note.textContent = `Checkout failed: ${err.message}`;
       note.classList.add('cart-checkout-error');
     }
   });

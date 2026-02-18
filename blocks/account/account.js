@@ -413,7 +413,10 @@ function renderAddresses(container, addresses, customerEmail, reload) {
 // --- Orders ---
 
 function renderLineItem(item) {
-  const image = item.custom?.image || '';
+  let image = item.custom?.image || '';
+  if (image && !image.startsWith('/') && !image.startsWith('http')) {
+    image = `./products/${image}`;
+  }
   const href = item.custom?.url || '';
   const unitPrice = parseFloat(item.price?.final || 0);
   const lineTotal = item.quantity * unitPrice;
