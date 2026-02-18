@@ -2,6 +2,8 @@
 
 A reference e-commerce storefront built on AEM Edge Delivery Services and the [Helix Commerce API](https://main--helix-website--adobe.aem.page/drafts/dyland/product-bus-overview). Product data is managed through the Helix Commerce API and delivered to the storefront via the Product Bus — a pipeline that renders product HTML with embedded structured data, and provides a queryable product index for listing pages.
 
+[Demo](https://main--aem-productbus-demo--dylandepass.aem.network/)
+
 ## Features
 
 - **Product detail pages** — Image gallery with thumbnail navigation, variant selection (color swatches, size buttons), dynamic pricing with sale detection, add to cart with stock awareness, and related products
