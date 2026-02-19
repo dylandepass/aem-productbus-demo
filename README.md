@@ -45,6 +45,74 @@ scripts/
 styles/           Global styles and design tokens
 ```
 
+## How product detail pages work
+
+Product pages are rendered server-side by the Product Pipeline as static HTML with embedded [JSON-LD](https://json-schema.org/) structured data. The initial HTML is optimized for bots and crawlers — when the page loads in a browser, the client-side PDP block reconstructs the DOM from the structured data.
+
+### Data sources
+
+**JSON-LD** (`<script type="application/ld+json">` in the document head) is the primary data source. It contains product name, SKU, pricing, availability, variant options, and related products. The PDP block parses this in `blocks/pdp/pdp.js` via `parseJsonLd()` and uses it to drive all rendering.
+
+**Initial HTML** provides a few things that aren't in the JSON-LD:
+- **Product description** — authored content sections below the buy-box
+- **Variant images** — `<picture>` elements inside variant `<div class="section">` elements, each tagged with `data-sku`
+- **LCP image** — the first product image is extracted early and kept in the page for fast rendering
+
+### PDP detection and block construction
+
+PDP detection happens in `scripts/scripts.js` inside `buildAutoBlocks()`. When a `<meta name="sku">` tag is present in the document head, `buildPDPBlock()` runs:
+
+1. Extracts the first `<picture>` as the LCP image and marks it `loading="eager"`
+2. Stashes all variant sections (`div.section` elements) on `block.variantSections`
+3. Stashes remaining authored content on `block.authoredContent`
+4. Constructs the PDP block element and clears the original HTML
+
+```js
+// scripts/scripts.js — PDP detection
+const metaSku = document.querySelector('meta[name="sku"]');
+const pdpBlock = document.querySelector('.pdp');
+if (metaSku && !pdpBlock) {
+  buildPDPBlock(main);
+}
+```
+
+### Component architecture
+
+The PDP block (`blocks/pdp/pdp.js`) uses a reactive state container and component-based rendering. Each UI section is a function that takes `(ph, block, state)` and returns a DOM element:
+
+| Component | File | What it renders |
+|-----------|------|----------------|
+| `renderGallery()` | `blocks/pdp/gallery.js` | Image carousel with thumbnail navigation |
+| `renderPricing()` | `blocks/pdp/pricing.js` | Price display (final, regular, savings) |
+| `renderOptions()` | `blocks/pdp/options.js` | Color swatches and size buttons |
+| `renderAddToCart()` | `blocks/pdp/add-to-cart.js` | Quantity selector and cart button |
+| `renderRelatedProducts()` | `blocks/pdp/related-products.js` | Related products carousel |
+
+Components are assembled in `buildBuyBox()` and appended to the block in `decorate()`. The layout is controlled by a CSS Grid with named areas (`gallery`, `title`, `buy-box`, `content`, `related`).
+
+### State management
+
+`createState()` provides a lightweight reactive container with `get()`, `set()`, and `onChange()`. When a variant is selected, subscriptions automatically update the gallery, pricing, and add-to-cart:
+
+```js
+state.onChange('selectedVariant', () => updateGalleryImages(block, state));
+state.onChange('selectedVariant', (variant) => {
+  const el = renderPricing(ph, block, state, variant);
+  if (el) block.querySelector('.pricing')?.replaceWith(el);
+});
+```
+
+### Adding new PDP sections
+
+New sections follow the same pattern:
+
+1. Create a `renderNewSection(ph, block, state)` function that returns a DOM element
+2. Add it to `buildBuyBox()` in the correct visual order
+3. If it needs to react to variant changes, add a `state.onChange('selectedVariant', ...)` subscription in `decorate()`
+4. Small additions (<30 lines) go directly in `pdp.js`; larger components get their own file in `blocks/pdp/`
+
+For sections that need placeholder content (e.g., ratings, stock urgency), create the render function with realistic defaults and a `// TODO: Replace placeholder with real data` comment.
+
 ## Local development
 
 ```sh
