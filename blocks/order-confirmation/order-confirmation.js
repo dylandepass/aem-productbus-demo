@@ -48,8 +48,9 @@ export default async function decorate(block) {
   const params = new URLSearchParams(window.location.search);
   const sessionId = params.get('session_id');
   const paypalOrderId = params.get('paypal_order_id');
+  const paymentIntentId = params.get('payment_intent_id');
 
-  if (!sessionId && !paypalOrderId) {
+  if (!sessionId && !paypalOrderId && !paymentIntentId) {
     showError(block, 'Order not found');
     return;
   }
@@ -61,6 +62,8 @@ export default async function decorate(block) {
     let url;
     if (paypalOrderId) {
       url = `${API_ORIGIN}/paypal/orders/${encodeURIComponent(paypalOrderId)}`;
+    } else if (paymentIntentId) {
+      url = `${API_ORIGIN}/stripe/payment-intents/${encodeURIComponent(paymentIntentId)}`;
     } else {
       url = `${API_ORIGIN}/checkout/session?id=${encodeURIComponent(sessionId)}`;
     }

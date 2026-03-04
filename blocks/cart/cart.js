@@ -398,6 +398,25 @@ function loadPayPalSDK() {
   return paypalSDKPromise;
 }
 
+// --- Stripe.js SDK ---
+
+const STRIPE_PUBLISHABLE_KEY = 'pk_test_51RTxbIFJuXfPVJYo22dHTRNGM3xMwCMbPKYXbZ2J7Uqvq0HJbITtqIchY4r9z3XtouWUK0LK94OUXK32rBCM7Lod00t5EYt53N';
+let stripeJSPromise = null;
+
+function loadStripeJS() {
+  if (stripeJSPromise) return stripeJSPromise;
+
+  stripeJSPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://js.stripe.com/v3/';
+    script.addEventListener('load', () => resolve(window.Stripe(STRIPE_PUBLISHABLE_KEY)));
+    script.addEventListener('error', () => reject(new Error('Failed to load Stripe.js')));
+    document.head.append(script);
+  });
+
+  return stripeJSPromise;
+}
+
 // --- Checkout form ---
 
 function buildCheckoutForm() {
@@ -423,6 +442,7 @@ function buildCheckoutForm() {
 
     <div class="cart-express-checkout">
       <h3>Express checkout</h3>
+      <div id="stripe-pr-container" class="cart-stripe-pr-container"></div>
       <div id="paypal-button-container" class="cart-paypal-container"></div>
     </div>
 
@@ -528,6 +548,125 @@ function buildCheckoutForm() {
     }).render(container);
   }).catch(() => {
     // PayPal SDK failed to load — Stripe checkout still works
+  });
+
+  // --- Stripe Payment Request Button (Apple Pay / Google Pay) ---
+  loadStripeJS().then(async (stripe) => {
+    const cart = await commerce.getCart();
+    const subtotal = cart.subtotal || 0;
+    const shipping = cart.shipping || 0;
+    const total = subtotal + shipping;
+
+    const paymentRequest = stripe.paymentRequest({
+      country: 'US',
+      currency: 'usd',
+      total: {
+        label: 'Order total',
+        amount: Math.round(total * 100),
+      },
+      requestPayerName: true,
+      requestPayerEmail: true,
+      requestShipping: true,
+      shippingOptions: [
+        {
+          id: 'standard',
+          label: 'Standard Shipping',
+          detail: subtotal >= 150 ? 'Free' : '$10.00',
+          amount: Math.round(shipping * 100),
+        },
+      ],
+    });
+
+    const canPay = await paymentRequest.canMakePayment();
+    if (!canPay) return;
+
+    const elements = stripe.elements();
+    const prButton = elements.create('paymentRequestButton', { paymentRequest });
+    const container = section.querySelector('#stripe-pr-container');
+    prButton.mount(container);
+
+    paymentRequest.on('paymentmethod', async (ev) => {
+      const note = section.querySelector('.cart-checkout-note');
+      note.textContent = 'Processing payment…';
+      note.classList.remove('cart-checkout-error');
+
+      try {
+        const { clientSecret, id } = await commerce.createStripePaymentIntent();
+        const { error, paymentIntent } = await stripe.confirmCardPayment(
+          clientSecret,
+          { payment_method: ev.paymentMethod.id },
+          { handleActions: false },
+        );
+
+        if (error) {
+          ev.complete('fail');
+          note.textContent = `Payment failed: ${error.message}`;
+          note.classList.add('cart-checkout-error');
+          return;
+        }
+
+        if (paymentIntent.status !== 'succeeded') {
+          ev.complete('fail');
+          note.textContent = 'Payment not completed. Please try again.';
+          note.classList.add('cart-checkout-error');
+          return;
+        }
+
+        ev.complete('success');
+
+        // Extract payer info from the payment sheet event
+        const nameParts = (ev.payerName || '').split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+        const shippingAddr = ev.shippingAddress || {};
+
+        const customer = {
+          email: ev.payerEmail || '',
+          firstName,
+          lastName,
+        };
+        const shippingInfo = {
+          name: ev.payerName || '',
+          email: ev.payerEmail || '',
+          address1: shippingAddr.addressLine?.[0] || '',
+          address2: shippingAddr.addressLine?.[1] || '',
+          city: shippingAddr.city || '',
+          state: shippingAddr.region || '',
+          zip: shippingAddr.postalCode || '',
+          country: shippingAddr.country || '',
+        };
+
+        await commerce.captureStripePaymentIntent(id, { customer, shipping: shippingInfo });
+        window.location.href = `/order-confirmation?payment_intent_id=${id}`;
+      } catch (err) {
+        ev.complete('fail');
+        note.textContent = `Payment failed: ${err.message}`;
+        note.classList.add('cart-checkout-error');
+      }
+    });
+
+    // Update payment request totals when cart changes
+    commerce.on(commerce.EVENTS.CART_UPDATED, (e) => {
+      const c = e.detail.cart;
+      const sub = c?.subtotal || 0;
+      const ship = c?.shipping || 0;
+      paymentRequest.update({
+        total: {
+          label: 'Order total',
+          amount: Math.round((sub + ship) * 100),
+        },
+        shippingOptions: [
+          {
+            id: 'standard',
+            label: 'Standard Shipping',
+            detail: sub >= 150 ? 'Free' : '$10.00',
+            amount: Math.round(ship * 100),
+          },
+        ],
+      });
+    });
+  }).catch(() => {
+    // Stripe.js failed to load — PayPal and card checkout still work
   });
 
   // --- Address Autocomplete (via worker proxy) ---
