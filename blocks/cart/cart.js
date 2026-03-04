@@ -400,7 +400,7 @@ function loadPayPalSDK() {
 
 // --- Stripe.js SDK ---
 
-const STRIPE_PUBLISHABLE_KEY = 'pk_test_51RTxbIFJuXfPVJYo22dHTRNGM3xMwCMbPKYXbZ2J7Uqvq0HJbITtqIchY4r9z3XtouWUK0LK94OUXK32rBCM7Lod00t5EYt53N';
+const STRIPE_PUBLISHABLE_KEY = 'pk_test_51T20B1J8K3ZPob7hXjCQMZ5bNxcE4KatSkxkhp6avphylnYFaAJtpTWE7fnas9nA9z2MDLPblybCmD41WmkUJKVV00wlcTT7jc';
 let stripeJSPromise = null;
 
 function loadStripeJS() {
@@ -578,6 +578,7 @@ function buildCheckoutForm() {
     });
 
     const canPay = await paymentRequest.canMakePayment();
+    console.log('[stripe-pr] canMakePayment:', canPay);
     if (!canPay) return;
 
     const elements = stripe.elements();
@@ -665,8 +666,8 @@ function buildCheckoutForm() {
         ],
       });
     });
-  }).catch(() => {
-    // Stripe.js failed to load — PayPal and card checkout still work
+  }).catch((err) => {
+    console.warn('[stripe-pr] Payment Request Button unavailable:', err);
   });
 
   // --- Address Autocomplete (via worker proxy) ---
