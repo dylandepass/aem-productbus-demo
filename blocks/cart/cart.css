@@ -337,6 +337,28 @@ select.cart-input {
   margin: var(--spacing-xxs) 0 0;
 }
 
+/* PayPal divider and button */
+.cart-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin: var(--spacing-xxs) 0;
+  color: var(--text-color-muted);
+  font-size: 0.8125rem;
+}
+
+.cart-divider::before,
+.cart-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-color);
+}
+
+.cart-paypal-container {
+  min-height: 45px;
+}
+
 .cart-checkout-note.cart-checkout-error {
   color: var(--error-color);
   font-size: 0.875rem;

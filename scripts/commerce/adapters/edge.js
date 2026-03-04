@@ -86,6 +86,20 @@ function authFetch(url, options = {}) {
   });
 }
 
+// --- Payload helpers ---
+
+function buildItemsPayload(cart) {
+  return cart.items.map((item) => ({
+    sku: item.sku,
+    name: item.name,
+    quantity: item.quantity,
+    price: item.price,
+    currency: item.currency || 'USD',
+    image: item.image || '',
+    url: item.url || '',
+  }));
+}
+
 // --- Adapter factory ---
 
 export default function createEdgeAdapter() {
@@ -136,15 +150,7 @@ export default function createEdgeAdapter() {
       const body = {
         customer,
         shipping,
-        items: cart.items.map((item) => ({
-          sku: item.sku,
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-          currency: item.currency || 'USD',
-          image: item.image || '',
-          url: item.url || '',
-        })),
+        items: buildItemsPayload(cart),
       };
 
       const resp = await fetch(`${API_ORIGIN}/checkout`, {
@@ -155,6 +161,48 @@ export default function createEdgeAdapter() {
 
       if (!resp.ok) {
         throw new Error(`Checkout failed: ${resp.status}`);
+      }
+
+      return resp.json();
+    },
+
+    async createPayPalOrder({ customer, shipping }) {
+      const cart = buildCart();
+      const body = {
+        customer,
+        shipping,
+        items: buildItemsPayload(cart),
+      };
+
+      const resp = await fetch(`${API_ORIGIN}/paypal/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (!resp.ok) {
+        throw new Error(`PayPal order creation failed: ${resp.status}`);
+      }
+
+      return resp.json();
+    },
+
+    async capturePayPalOrder(orderId, { customer, shipping }) {
+      const cart = buildCart();
+      const body = {
+        customer,
+        shipping,
+        items: buildItemsPayload(cart),
+      };
+
+      const resp = await fetch(`${API_ORIGIN}/paypal/orders/${encodeURIComponent(orderId)}/capture`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (!resp.ok) {
+        throw new Error(`PayPal capture failed: ${resp.status}`);
       }
 
       return resp.json();

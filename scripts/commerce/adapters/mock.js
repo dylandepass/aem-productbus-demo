@@ -88,6 +88,25 @@ export default function createMockAdapter() {
       save();
     },
 
+    async createPayPalOrder({ customer, shipping }) {
+      // eslint-disable-next-line no-console
+      console.log('[mock] createPayPalOrder', { customer, shipping });
+      orderCounter += 1;
+      return { id: `mock-paypal-${orderCounter}` };
+    },
+
+    async capturePayPalOrder(orderId, { customer, shipping }) {
+      // eslint-disable-next-line no-console
+      console.log('[mock] capturePayPalOrder', { orderId, customer, shipping });
+      return {
+        status: 'COMPLETED',
+        paypal_order_id: orderId,
+        customer_email: customer.email,
+        amount_total: 0,
+        currency: 'usd',
+      };
+    },
+
     async createOrder({ customer, shipping }) {
       // eslint-disable-next-line no-console
       console.log('[mock] createOrder', { customer, shipping, items: Object.values(items) });
