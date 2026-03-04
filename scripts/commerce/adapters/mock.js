@@ -107,6 +107,25 @@ export default function createMockAdapter() {
       };
     },
 
+    async createStripePaymentIntent() {
+      // eslint-disable-next-line no-console
+      console.log('[mock] createStripePaymentIntent');
+      orderCounter += 1;
+      return { clientSecret: `mock_secret_${orderCounter}`, id: `mock_pi_${orderCounter}` };
+    },
+
+    async captureStripePaymentIntent(id, { customer, shipping }) {
+      // eslint-disable-next-line no-console
+      console.log('[mock] captureStripePaymentIntent', { id, customer, shipping });
+      return {
+        status: 'succeeded',
+        payment_intent_id: id,
+        customer_email: customer.email,
+        amount_total: 0,
+        currency: 'usd',
+      };
+    },
+
     async createOrder({ customer, shipping }) {
       // eslint-disable-next-line no-console
       console.log('[mock] createOrder', { customer, shipping, items: Object.values(items) });

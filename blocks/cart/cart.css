@@ -367,6 +367,15 @@ select.cart-input {
   background: var(--border-color);
 }
 
+.cart-stripe-pr-container {
+  min-height: 45px;
+  margin-bottom: var(--spacing-xxs);
+}
+
+.cart-stripe-pr-container:empty {
+  display: none;
+}
+
 .cart-paypal-container {
   min-height: 45px;
 }

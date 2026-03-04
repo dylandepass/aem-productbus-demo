@@ -208,6 +208,44 @@ export default function createEdgeAdapter() {
       return resp.json();
     },
 
+    async createStripePaymentIntent() {
+      const cart = buildCart();
+      const body = { items: buildItemsPayload(cart) };
+
+      const resp = await fetch(`${API_ORIGIN}/stripe/payment-intents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (!resp.ok) {
+        throw new Error(`Stripe PaymentIntent creation failed: ${resp.status}`);
+      }
+
+      return resp.json();
+    },
+
+    async captureStripePaymentIntent(id, { customer, shipping }) {
+      const cart = buildCart();
+      const body = {
+        customer,
+        shipping,
+        items: buildItemsPayload(cart),
+      };
+
+      const resp = await fetch(`${API_ORIGIN}/stripe/payment-intents/${encodeURIComponent(id)}/capture`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (!resp.ok) {
+        throw new Error(`Stripe PaymentIntent capture failed: ${resp.status}`);
+      }
+
+      return resp.json();
+    },
+
     async createOrder({ customer, shipping }) {
       const cart = buildCart();
       const body = {

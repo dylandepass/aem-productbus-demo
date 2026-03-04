@@ -115,6 +115,18 @@ export const commerce = {
     return result;
   },
 
+  async createStripePaymentIntent() {
+    const a = await loadAdapter();
+    return a.createStripePaymentIntent();
+  },
+
+  async captureStripePaymentIntent(paymentIntentId, { customer, shipping }) {
+    const a = await loadAdapter();
+    const result = await a.captureStripePaymentIntent(paymentIntentId, { customer, shipping });
+    dispatch(EVENTS.ORDER_CREATED, { order: result });
+    return result;
+  },
+
   async createOrder({ customer, shipping }) {
     const a = await loadAdapter();
     const order = await a.createOrder({ customer, shipping });
