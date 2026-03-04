@@ -231,7 +231,8 @@
 
 .cart-contact,
 .cart-shipping,
-.cart-summary {
+.cart-summary,
+.cart-express-checkout {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xxs);
@@ -242,6 +243,17 @@
 .cart-summary {
   border-bottom: none;
   padding-bottom: 0;
+}
+
+.cart-express-checkout {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.cart-express-checkout h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 var(--spacing-xxs);
 }
 
 /* form inputs */
@@ -314,7 +326,7 @@ select.cart-input {
 .cart-checkout-btn {
   width: 100%;
   padding: 0.875rem;
-  margin-top: var(--spacing-xxs);
+  margin-top: var(--spacing-s);
   background: var(--button-primary-bg);
   color: var(--button-primary-color);
   border: none;
@@ -335,6 +347,28 @@ select.cart-input {
   font-size: 0.75rem;
   color: var(--text-color-muted);
   margin: var(--spacing-xxs) 0 0;
+}
+
+/* PayPal divider and button */
+.cart-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin: var(--spacing-xxs) 0;
+  color: var(--text-color-muted);
+  font-size: 0.8125rem;
+}
+
+.cart-divider::before,
+.cart-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-color);
+}
+
+.cart-paypal-container {
+  min-height: 45px;
 }
 
 .cart-checkout-note.cart-checkout-error {

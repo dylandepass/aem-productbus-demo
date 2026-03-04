@@ -351,6 +351,53 @@ function showAddressPicker(section, addresses) {
   });
 }
 
+// --- Form data helper ---
+
+function getFormData(section) {
+  const email = section.querySelector('[name="email"]').value.trim();
+  const firstName = section.querySelector('[name="firstName"]').value.trim();
+  const lastName = section.querySelector('[name="lastName"]').value.trim();
+  const address1 = section.querySelector('[name="address1"]').value.trim();
+  const address2 = section.querySelector('[name="address2"]').value.trim();
+  const city = section.querySelector('[name="city"]').value.trim();
+  const state = section.querySelector('[name="state"]').value.trim();
+  const zip = section.querySelector('[name="zip"]').value.trim();
+  const country = section.querySelector('[name="country"]').value;
+
+  return {
+    customer: { email, firstName, lastName },
+    shipping: {
+      name: `${firstName} ${lastName}`,
+      email,
+      address1,
+      address2,
+      city,
+      state,
+      zip,
+      country,
+    },
+  };
+}
+
+// --- PayPal SDK ---
+
+const PAYPAL_CLIENT_ID = 'AYfXbmal8BOpF1lesKHv4Cf1jRGYLaFnz2X8sq1YKdQGhARrLhFngnJBTmFQOp8qD1kIIItrC36YPc-w';
+let paypalSDKPromise = null;
+
+function loadPayPalSDK() {
+  if (paypalSDKPromise) return paypalSDKPromise;
+
+  paypalSDKPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=USD`;
+    script.addEventListener('load', () => resolve(window.paypal));
+    script.addEventListener('error', () => reject(new Error('Failed to load PayPal SDK')));
+    document.head.append(script);
+  });
+
+  return paypalSDKPromise;
+}
+
 // --- Checkout form ---
 
 function buildCheckoutForm() {
@@ -358,6 +405,29 @@ function buildCheckoutForm() {
   section.className = 'cart-checkout-section';
 
   section.innerHTML = `
+    <div class="cart-summary">
+      <h3>Order summary</h3>
+      <div class="cart-summary-row">
+        <span>Subtotal</span>
+        <span class="cart-summary-subtotal">$0.00</span>
+      </div>
+      <div class="cart-summary-row">
+        <span>Shipping</span>
+        <span class="cart-summary-shipping">Free</span>
+      </div>
+      <div class="cart-summary-row cart-summary-total">
+        <span>Total</span>
+        <span class="cart-summary-total-value">$0.00</span>
+      </div>
+    </div>
+
+    <div class="cart-express-checkout">
+      <h3>Express checkout</h3>
+      <div id="paypal-button-container" class="cart-paypal-container"></div>
+    </div>
+
+    <div class="cart-divider"><span>or</span></div>
+
     <div class="cart-contact">
       <h3>Contact</h3>
       <input type="email" class="cart-input" name="email" placeholder="Email address" autocomplete="email" required>
@@ -394,66 +464,70 @@ function buildCheckoutForm() {
       </div>
     </div>
 
-    <div class="cart-summary">
-      <h3>Order summary</h3>
-      <div class="cart-summary-row">
-        <span>Subtotal</span>
-        <span class="cart-summary-subtotal">$0.00</span>
-      </div>
-      <div class="cart-summary-row">
-        <span>Shipping</span>
-        <span class="cart-summary-shipping">Free</span>
-      </div>
-      <div class="cart-summary-row cart-summary-total">
-        <span>Total</span>
-        <span class="cart-summary-total-value">$0.00</span>
-      </div>
-      <button class="cart-checkout-btn" type="button">Pay Now</button>
-      <p class="cart-checkout-note"></p>
-    </div>
+    <button class="cart-checkout-btn" type="button">Pay with card</button>
+    <p class="cart-checkout-note"></p>
   `;
 
-  // place order
+  // place order (Stripe)
   const placeBtn = section.querySelector('.cart-checkout-btn');
   placeBtn.addEventListener('click', async () => {
     if (!validateForm(section)) return;
 
-    const email = section.querySelector('[name="email"]').value.trim();
-    const firstName = section.querySelector('[name="firstName"]').value.trim();
-    const lastName = section.querySelector('[name="lastName"]').value.trim();
-    const address = section.querySelector('[name="address1"]').value.trim();
-    const address2 = section.querySelector('[name="address2"]').value.trim();
-    const city = section.querySelector('[name="city"]').value.trim();
-    const state = section.querySelector('[name="state"]').value.trim();
-    const zip = section.querySelector('[name="zip"]').value.trim();
-    const country = section.querySelector('[name="country"]').value;
+    const { customer, shipping } = getFormData(section);
 
     placeBtn.disabled = true;
     placeBtn.textContent = 'Redirecting to payment…';
 
     try {
-      const { url } = await commerce.createCheckoutSession({
-        customer: { email, firstName, lastName },
-        shipping: {
-          name: `${firstName} ${lastName}`,
-          email,
-          address1: address,
-          address2,
-          city,
-          state,
-          zip,
-          country,
-        },
-      });
-
+      const { url } = await commerce.createCheckoutSession({ customer, shipping });
       window.location.href = url;
     } catch (err) {
       placeBtn.disabled = false;
-      placeBtn.textContent = 'Pay Now';
+      placeBtn.textContent = 'Pay with card';
       const note = section.querySelector('.cart-checkout-note');
       note.textContent = `Checkout failed: ${err.message}`;
       note.classList.add('cart-checkout-error');
     }
+  });
+
+  // PayPal button — no form validation required; PayPal collects payer/shipping info
+  loadPayPalSDK().then((paypal) => {
+    const container = section.querySelector('#paypal-button-container');
+    paypal.Buttons({
+      style: { layout: 'horizontal', tagline: false },
+      createOrder: async () => {
+        // Pass form data if filled, but don't require it
+        const formData = getFormData(section);
+        const { id } = await commerce.createPayPalOrder(formData);
+        return id;
+      },
+      onApprove: async (data) => {
+        const note = section.querySelector('.cart-checkout-note');
+        note.textContent = 'Processing payment…';
+        note.classList.remove('cart-checkout-error');
+
+        try {
+          const formData = getFormData(section);
+          await commerce.capturePayPalOrder(data.orderID, formData);
+          window.location.href = `/order-confirmation?paypal_order_id=${data.orderID}`;
+        } catch (err) {
+          note.textContent = `Payment failed: ${err.message}`;
+          note.classList.add('cart-checkout-error');
+        }
+      },
+      onError: (err) => {
+        const note = section.querySelector('.cart-checkout-note');
+        note.textContent = `PayPal error: ${err.message || 'Something went wrong'}`;
+        note.classList.add('cart-checkout-error');
+      },
+      onCancel: () => {
+        const note = section.querySelector('.cart-checkout-note');
+        note.textContent = 'Payment cancelled.';
+        note.classList.remove('cart-checkout-error');
+      },
+    }).render(container);
+  }).catch(() => {
+    // PayPal SDK failed to load — Stripe checkout still works
   });
 
   // --- Address Autocomplete (via worker proxy) ---

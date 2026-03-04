@@ -1,7 +1,7 @@
 /**
  * Order confirmation block.
- * Shown after a successful Stripe Checkout redirect.
- * Fetches session details from the worker and displays payment status.
+ * Shown after a successful Stripe Checkout or PayPal payment.
+ * Fetches session/order details from the worker and displays payment status.
  */
 
 import { commerce } from '../../scripts/commerce/api.js';
@@ -47,8 +47,9 @@ export default async function decorate(block) {
 
   const params = new URLSearchParams(window.location.search);
   const sessionId = params.get('session_id');
+  const paypalOrderId = params.get('paypal_order_id');
 
-  if (!sessionId) {
+  if (!sessionId && !paypalOrderId) {
     showError(block, 'Order not found');
     return;
   }
@@ -57,8 +58,15 @@ export default async function decorate(block) {
   block.innerHTML = '<div class="order-confirmation-content"><p>Loading order details…</p></div>';
 
   try {
-    const resp = await fetch(`${API_ORIGIN}/checkout/session?id=${encodeURIComponent(sessionId)}`);
-    if (!resp.ok) throw new Error('Failed to fetch session');
+    let url;
+    if (paypalOrderId) {
+      url = `${API_ORIGIN}/paypal/orders/${encodeURIComponent(paypalOrderId)}`;
+    } else {
+      url = `${API_ORIGIN}/checkout/session?id=${encodeURIComponent(sessionId)}`;
+    }
+
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('Failed to fetch order details');
 
     const session = await resp.json();
 

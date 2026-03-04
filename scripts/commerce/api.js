@@ -103,6 +103,18 @@ export const commerce = {
     return a.createCheckoutSession({ customer, shipping });
   },
 
+  async createPayPalOrder({ customer, shipping }) {
+    const a = await loadAdapter();
+    return a.createPayPalOrder({ customer, shipping });
+  },
+
+  async capturePayPalOrder(orderId, { customer, shipping }) {
+    const a = await loadAdapter();
+    const result = await a.capturePayPalOrder(orderId, { customer, shipping });
+    dispatch(EVENTS.ORDER_CREATED, { order: result });
+    return result;
+  },
+
   async createOrder({ customer, shipping }) {
     const a = await loadAdapter();
     const order = await a.createOrder({ customer, shipping });
