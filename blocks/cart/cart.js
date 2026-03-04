@@ -405,6 +405,29 @@ function buildCheckoutForm() {
   section.className = 'cart-checkout-section';
 
   section.innerHTML = `
+    <div class="cart-summary">
+      <h3>Order summary</h3>
+      <div class="cart-summary-row">
+        <span>Subtotal</span>
+        <span class="cart-summary-subtotal">$0.00</span>
+      </div>
+      <div class="cart-summary-row">
+        <span>Shipping</span>
+        <span class="cart-summary-shipping">Free</span>
+      </div>
+      <div class="cart-summary-row cart-summary-total">
+        <span>Total</span>
+        <span class="cart-summary-total-value">$0.00</span>
+      </div>
+    </div>
+
+    <div class="cart-express-checkout">
+      <h3>Express checkout</h3>
+      <div id="paypal-button-container" class="cart-paypal-container"></div>
+    </div>
+
+    <div class="cart-divider"><span>or</span></div>
+
     <div class="cart-contact">
       <h3>Contact</h3>
       <input type="email" class="cart-input" name="email" placeholder="Email address" autocomplete="email" required>
@@ -441,25 +464,8 @@ function buildCheckoutForm() {
       </div>
     </div>
 
-    <div class="cart-summary">
-      <h3>Order summary</h3>
-      <div class="cart-summary-row">
-        <span>Subtotal</span>
-        <span class="cart-summary-subtotal">$0.00</span>
-      </div>
-      <div class="cart-summary-row">
-        <span>Shipping</span>
-        <span class="cart-summary-shipping">Free</span>
-      </div>
-      <div class="cart-summary-row cart-summary-total">
-        <span>Total</span>
-        <span class="cart-summary-total-value">$0.00</span>
-      </div>
-      <button class="cart-checkout-btn" type="button">Pay Now</button>
-      <p class="cart-checkout-note"></p>
-      <div class="cart-divider"><span>or</span></div>
-      <div id="paypal-button-container" class="cart-paypal-container"></div>
-    </div>
+    <button class="cart-checkout-btn" type="button">Pay with card</button>
+    <p class="cart-checkout-note"></p>
   `;
 
   // place order (Stripe)
@@ -477,7 +483,7 @@ function buildCheckoutForm() {
       window.location.href = url;
     } catch (err) {
       placeBtn.disabled = false;
-      placeBtn.textContent = 'Pay Now';
+      placeBtn.textContent = 'Pay with card';
       const note = section.querySelector('.cart-checkout-note');
       note.textContent = `Checkout failed: ${err.message}`;
       note.classList.add('cart-checkout-error');
