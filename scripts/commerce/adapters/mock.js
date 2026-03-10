@@ -138,7 +138,7 @@ export default function createMockAdapter() {
         }
         return {
           sku: item.sku,
-          urlKey: (item.url || '').split('/').pop() || '',
+          path: (item.url || '').split('/').pop() || '',
           name: item.name,
           quantity: item.quantity,
           price: {

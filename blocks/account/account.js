@@ -90,6 +90,13 @@ function renderAddressCard(address) {
     details.append(phoneLine);
   }
 
+  if (address.isDefault) {
+    const badge = document.createElement('span');
+    badge.className = 'address-default-badge';
+    badge.textContent = 'Default';
+    details.prepend(badge);
+  }
+
   const actions = document.createElement('div');
   actions.className = 'address-card-actions';
 
@@ -142,6 +149,9 @@ function buildAddressForm(address, customerEmail) {
       <input type="tel" class="address-input" name="phone" placeholder="Phone (optional)" value="${address?.phone || ''}">
       <input type="email" class="address-input" name="email" placeholder="Email" required value="${address?.email || customerEmail || ''}">
     </div>
+    <label class="address-form-default">
+      <input type="checkbox" name="isDefault" ${address?.isDefault ? 'checked' : ''}> Set as default address
+    </label>
     <div class="address-form-actions">
       <button type="submit" class="address-save-btn">${address ? 'Update address' : 'Save address'}</button>
       <button type="button" class="address-cancel-btn">Cancel</button>
@@ -170,6 +180,8 @@ function getFormData(form) {
     const val = form.querySelector(`[name="${field}"]`)?.value?.trim();
     if (val) data[field] = val;
   });
+  const isDefaultEl = form.querySelector('[name="isDefault"]');
+  if (isDefaultEl?.checked) data.isDefault = true;
   return data;
 }
 
