@@ -312,7 +312,9 @@ function showAddressPicker(section, addresses) {
     document.body.style.overflow = '';
   }
 
-  addresses.forEach((addr) => {
+  const sorted = [...addresses].sort((a, b) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0));
+
+  sorted.forEach((addr) => {
     const card = document.createElement('button');
     card.type = 'button';
     card.className = 'cart-address-option';
@@ -323,7 +325,7 @@ function showAddressPicker(section, addresses) {
       .filter(Boolean).join(', ');
 
     card.innerHTML = `
-      <p class="cart-address-option-name">${addr.name || ''}</p>
+      <p class="cart-address-option-name">${addr.name || ''}${addr.isDefault ? ' <span class="cart-address-default-badge">Default</span>' : ''}</p>
       <p>${parts.join(', ')}</p>
       <p>${cityLine}</p>
       <p>${addr.country || ''}</p>
@@ -686,7 +688,7 @@ function buildCheckoutForm() {
     const customer = await commerce.getCustomerProfile();
     const user = await commerce.getCustomer();
     const addresses = await commerce.getAddresses();
-    const addr = addresses?.[0];
+    const addr = addresses?.find((a) => a.isDefault) || addresses?.[0];
 
     // Pre-fill email from profile
     const emailEl = section.querySelector('[name="email"]');
